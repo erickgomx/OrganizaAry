@@ -59,6 +59,6 @@ Acesse `http://localhost:3000`.
 
 - [x] **Fase 1 - Scaffold & Schema:** Setup Next.js, Tailwind, client Supabase SSR, tipos estritos TypeScript e DDL SQL com RLS.
 - [x] **Fase 2 - Auth & Google Config:** SSO Google com escopo offline (`access_type=offline`), captura & persistência de tokens (`google_refresh_token`), middleware de proteção de rotas, interface mobile-first de login e cliente Google APIs com auto-refresh.
-- [ ] **Fase 3 - Core CRM & Eventos:** Gestão completa de clientes e captações (visão 360º).
+- [x] **Fase 3 - Core CRM & Eventos:** Gestão completa de clientes (CRUD, atalhos rápidos WhatsApp/Telefone/Email, perfil Visão 360º com faturamento acumulado e histórico de captações) e pipeline de Eventos com máquina de 5 estados (`budget_lead` → `scheduled` → `captured` → `post_production` → `finished`).
 - [ ] **Fase 4 - Task Engine & Kanban:** Drag-and-drop interativo com Framer Motion.
 - [ ] **Fase 5 - Google APIs Integration:** Sincronização de calendário, geração de pastas no Drive e reuniões Meet.
