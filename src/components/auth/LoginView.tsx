@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -43,9 +43,9 @@ export function LoginView({ error }: LoginViewProps) {
               <Image
                 src="/logo.png"
                 alt="Organiza Ary Logo"
-                width={112}
-                height={112}
-                className="w-28 h-28 object-contain drop-shadow-md select-none"
+                width={128}
+                height={128}
+                className="w-32 h-32 object-contain drop-shadow-md select-none"
                 priority
               />
             </motion.div>

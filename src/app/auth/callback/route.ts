@@ -38,6 +38,15 @@ export async function GET(request: Request) {
         ? new Date(session.expires_at * 1000).toISOString()
         : null;
 
+      // Check if user already exists in profiles (detect first login)
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const isFirstLogin = !existingProfile;
+
       // Persist Google OAuth tokens for background Calendar, Drive and Meet API calls
       const profileUpdates: {
         id: string;
@@ -69,6 +78,9 @@ export async function GET(request: Request) {
       await supabase.from("profiles").upsert(profileUpdates, { onConflict: "id" });
 
       const destination = getSafeRedirectUrl(next, origin);
+      if (isFirstLogin) {
+        destination.searchParams.set("first_login", "1");
+      }
       return NextResponse.redirect(destination);
     }
   }

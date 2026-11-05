@@ -1,12 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Heart } from "lucide-react";
 import { SignOutButton } from "./SignOutButton";
 import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
+import { PrincessWelcomeModal } from "@/components/onboarding/PrincessWelcomeModal";
 
 export interface SafeNavbarProfile {
   id?: string;
@@ -24,22 +25,60 @@ interface AppNavbarProps {
 export function AppNavbar({ profile }: AppNavbarProps) {
   const pathname = usePathname();
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isLoveNoteOpen, setIsLoveNoteOpen] = useState(false);
   const isGoogleConnected = profile?.hasGoogleSync ?? Boolean(profile?.google_refresh_token);
 
-  // Check on initial load if the tutorial has been seen, otherwise open smoothly
+  // Check on initial load if love note or tutorial has been seen, otherwise open smoothly
   useEffect(() => {
     try {
-      const hasCompleted = localStorage.getItem("organizaary_tutorial_completed");
-      if (!hasCompleted) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isFirstLoginQuery =
+        urlParams.get("first_login") === "1" || urlParams.get("first_login") === "true";
+      const hasSeenLoveNote = localStorage.getItem("organizaary_princess_welcome_seen");
+
+      if (!hasSeenLoveNote || isFirstLoginQuery) {
         const timer = setTimeout(() => {
-          setIsGuideOpen(true);
-        }, 600);
+          setIsLoveNoteOpen(true);
+        }, 500);
         return () => clearTimeout(timer);
+      } else {
+        const hasCompletedGuide = localStorage.getItem("organizaary_tutorial_completed");
+        if (!hasCompletedGuide) {
+          const timer = setTimeout(() => {
+            setIsGuideOpen(true);
+          }, 600);
+          return () => clearTimeout(timer);
+        }
       }
     } catch {
       // Ignore localStorage access issues if cookies/storage blocked
     }
   }, []);
+
+  const handleCloseLoveNote = () => {
+    try {
+      localStorage.setItem("organizaary_princess_welcome_seen", "true");
+      if (typeof window !== "undefined" && window.location.search.includes("first_login")) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("first_login");
+        window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+      }
+    } catch {
+      // Storage access safety
+    }
+    setIsLoveNoteOpen(false);
+
+    try {
+      const hasCompletedGuide = localStorage.getItem("organizaary_tutorial_completed");
+      if (!hasCompletedGuide) {
+        setTimeout(() => {
+          setIsGuideOpen(true);
+        }, 400);
+      }
+    } catch {
+      // Storage access safety
+    }
+  };
 
   const navItems = [
     { href: "/dashboard", label: "Início", icon: LayoutDashboard },
@@ -88,8 +127,19 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             })}
           </nav>
 
-          {/* User profile, Guide & actions */}
-          <div className="flex items-center gap-2.5">
+          {/* User profile, Guide, Love Note & actions */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Re-consultable Love Note Trigger */}
+            <button
+              onClick={() => setIsLoveNoteOpen(true)}
+              type="button"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium text-rose-300 bg-[#1a151f] hover:bg-[#231c29] border border-[#33293c] hover:border-rose-400/40 transition-all shadow-sm group"
+              title="Recadinho do Príncipe ❤️"
+            >
+              <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400/30 group-hover:scale-110 transition-transform" />
+              <span className="hidden sm:inline">Do seu Príncipe</span>
+            </button>
+
             {/* Re-consultable Tutorial / User Guide Trigger */}
             <button
               onClick={() => setIsGuideOpen(true)}
@@ -164,6 +214,12 @@ export function AppNavbar({ profile }: AppNavbarProps) {
           </button>
         </div>
       </nav>
+
+      {/* Princess First Login Love Note Modal */}
+      <PrincessWelcomeModal
+        isOpen={isLoveNoteOpen}
+        onClose={handleCloseLoveNote}
+      />
 
       {/* Re-consultable User Guide Modal */}
       <UserGuideModal
