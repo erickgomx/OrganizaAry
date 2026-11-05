@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -244,7 +244,7 @@ export function EventsView({
             }`}
           >
             <CheckSquare className="w-3.5 h-3.5 text-[#9873a1]" />
-            <span>Fila de Edição</span>
+            <span>Tarefas</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 tabular-nums">
               {tasks.filter((t) => !t.is_done).length}
             </span>
@@ -471,7 +471,7 @@ export function EventsView({
         </div>
       )}
 
-      {/* View 2: Fila de Edição (Checklist Limpo) */}
+      {/* View 2: Tarefas (Checklist Limpo) */}
       {activeTab === "edicao" && (
         <div className="space-y-3">
           {filteredTasks.length === 0 ? (
@@ -487,7 +487,7 @@ export function EventsView({
                 }}
                 className="text-xs text-[#9873a1] hover:underline font-medium"
               >
-                + Criar nova tarefa de edição
+                + Criar nova tarefa
               </button>
             </div>
           ) : (
@@ -618,7 +618,7 @@ export function EventsView({
         onClose={() => setDeletingEvent(null)}
         isLoading={isDeletingEvent}
         title="Remover Captação"
-        description={`Tem certeza que deseja remover o ensaio "${deletingEvent?.title}"? Todas as tarefas de edição vinculadas a este trabalho também serão excluídas.`}
+        description={`Tem certeza que deseja remover o ensaio "${deletingEvent?.title}"? Todas as tarefas vinculadas a este trabalho também serão excluídas.`}
         confirmLabel="Sim, Remover"
         onConfirm={handleConfirmDeleteEvent}
       />

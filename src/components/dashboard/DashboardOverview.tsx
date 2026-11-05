@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -151,7 +151,7 @@ export function DashboardOverview({
         </div>
       </div>
 
-      {/* Two Clean Actionable Columns: Agenda & Edição */}
+      {/* Two Clean Actionable Columns: Agenda & Tarefas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Coluna 1: Próximos Ensaios na Agenda */}
         <div className="space-y-3">
@@ -272,12 +272,12 @@ export function DashboardOverview({
           )}
         </div>
 
-        {/* Coluna 2: Fila de Edição & Checklist */}
+        {/* Coluna 2: Tarefas & Checklist */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[#968a9c] flex items-center gap-1.5">
               <CheckSquare className="w-3.5 h-3.5 text-[#9873a1]" />
-              Fila de Edição ({pendingTasks.length})
+              Tarefas ({pendingTasks.length})
             </h3>
             <button
               onClick={() => setIsTaskModalOpen(true)}
@@ -292,7 +292,7 @@ export function DashboardOverview({
             <div className="rounded-2xl border border-dashed border-[#33293c] bg-[#120e15]/40 p-8 text-center space-y-2">
               <CheckCircle2 className="w-6 h-6 text-[#9fc193] mx-auto" />
               <p className="text-xs sm:text-sm font-medium text-[#f4eff5]">
-                Tudo entregue! Nenhuma edição pendente.
+                Tudo entregue! Nenhuma tarefa pendente.
               </p>
               <button
                 onClick={() => setIsTaskModalOpen(true)}

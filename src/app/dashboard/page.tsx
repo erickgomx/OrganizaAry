@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
@@ -7,7 +7,7 @@ import { TaskWithDetails } from "@/actions/tasks";
 
 export const metadata = {
   title: "Início | OrganizaAry",
-  description: "Visão simples e direta dos seus ensaios e tarefas de edição.",
+  description: "Visão simples e direta dos seus ensaios e tarefas.",
 };
 
 export default async function DashboardPage() {

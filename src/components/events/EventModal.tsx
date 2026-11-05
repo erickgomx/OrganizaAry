@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { X, Loader2, Calendar, MapPin, DollarSign, User, FileText, CheckCircle, Trash2 } from "lucide-react";
@@ -285,7 +285,7 @@ export function EventModal({
             onClose={() => setIsConfirmDeleteOpen(false)}
             isLoading={isDeleting}
             title="Remover Captação"
-            description={`Tem certeza que deseja excluir "${event.title}"? Todas as tarefas de edição vinculadas também serão removidas.`}
+            description={`Tem certeza que deseja excluir "${event.title}"? Todas as tarefas vinculadas também serão removidas.`}
             confirmLabel="Sim, Remover"
             onConfirm={async () => {
               setIsDeleting(true);

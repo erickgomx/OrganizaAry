@@ -108,7 +108,7 @@ export function LoginView({ error }: LoginViewProps) {
               </div>
               <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a151f] border border-[#33293c] transition-colors hover:border-[#9873a1]/30">
                 <CheckSquare className="w-3.5 h-3.5 text-[#9873a1] mb-1" />
-                <span>Edição</span>
+                <span>Tarefas</span>
               </div>
             </div>
           </motion.div>

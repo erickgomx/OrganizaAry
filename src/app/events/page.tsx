@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getEvents } from "@/actions/events";
 import { getClients } from "@/actions/clients";
@@ -8,7 +8,7 @@ import { EventsView } from "@/components/events/EventsView";
 
 export const metadata = {
   title: "Trabalhos | OrganizaAry",
-  description: "Agenda de ensaios e fila de edição em um fluxo unificado e simples.",
+  description: "Agenda de ensaios e tarefas em um fluxo unificado e simples.",
 };
 
 export default async function EventsPage() {
