@@ -97,7 +97,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </div>
               <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420]">
                 <CheckSquare className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
-                <span>Kanban</span>
+                <span>Tarefas</span>
               </div>
             </div>
           </div>

@@ -214,7 +214,7 @@ export function EventModal({
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
                 className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
               >
-                <option value="budget_lead">1. Orçamento / Lead</option>
+                <option value="budget_lead">1. Orçamento / Proposta</option>
                 <option value="scheduled">2. Agendado (Fechado)</option>
                 <option value="captured">3. Captação Concluída</option>
                 <option value="post_production">4. Pós-Produção</option>

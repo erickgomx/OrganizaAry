@@ -1,11 +1,13 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, KanbanSquare } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, KanbanSquare, BookOpen } from "lucide-react";
 import { SignOutButton } from "./SignOutButton";
 import { Profile } from "@/types/database";
+import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
 
 interface AppNavbarProps {
   profile: Profile | null;
@@ -13,12 +15,28 @@ interface AppNavbarProps {
 
 export function AppNavbar({ profile }: AppNavbarProps) {
   const pathname = usePathname();
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+
+  // Check on initial load if the tutorial has been seen, otherwise open smoothly
+  useEffect(() => {
+    try {
+      const hasCompleted = localStorage.getItem("organizaary_tutorial_completed");
+      if (!hasCompleted) {
+        const timer = setTimeout(() => {
+          setIsGuideOpen(true);
+        }, 600);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // Ignore localStorage access issues if cookies/storage blocked
+    }
+  }, []);
 
   const navItems = [
     { href: "/dashboard", label: "Início", icon: LayoutDashboard },
     { href: "/clients", label: "Clientes", icon: Users },
     { href: "/events", label: "Eventos", icon: Calendar },
-    { href: "/tasks", label: "Kanban", icon: KanbanSquare },
+    { href: "/tasks", label: "Tarefas", icon: KanbanSquare },
   ];
 
   return (
@@ -63,12 +81,23 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             })}
           </nav>
 
-          {/* User profile & actions */}
-          <div className="flex items-center gap-3">
+          {/* User profile, Guide & actions */}
+          <div className="flex items-center gap-2.5">
+            {/* Re-consultable Tutorial / User Guide Trigger */}
+            <button
+              onClick={() => setIsGuideOpen(true)}
+              type="button"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#c8a97e] bg-[#1a1917] hover:bg-[#221f1c] border border-[#2d2822] hover:border-[#c8a97e]/40 transition-all shadow-sm"
+              title="Abrir Tutorial e Guia do Usuário"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#c8a97e]" />
+              <span className="hidden sm:inline">Guia de Uso</span>
+            </button>
+
             {profile?.google_refresh_token ? (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#162017] border border-[#273829] text-[#9fc193]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#82af74]" />
-                Google Conectado
+                Google Sincronizado
               </span>
             ) : (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#211a14] border border-[#382b21] text-[#c9a77e]">
@@ -94,7 +123,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar with direct Guide access */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#23201c] bg-[#121110]/95 backdrop-blur-md px-2 pb-safe">
         <div className="flex items-center justify-around h-14">
           {navItems.map((item) => {
@@ -115,8 +144,22 @@ export function AppNavbar({ profile }: AppNavbarProps) {
               </Link>
             );
           })}
+          <button
+            onClick={() => setIsGuideOpen(true)}
+            type="button"
+            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] text-[#c8a97e] hover:text-[#dfba88] transition-colors"
+          >
+            <BookOpen className="h-4 w-4 text-[#c8a97e]" />
+            <span>Guia</span>
+          </button>
         </div>
       </nav>
+
+      {/* Re-consultable User Guide Modal */}
+      <UserGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+      />
     </>
   );
 }

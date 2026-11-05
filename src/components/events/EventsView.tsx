@@ -62,7 +62,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
   }[] = [
     {
       key: "budget_lead",
-      label: "Orçamento / Lead",
+      label: "Orçamento / Proposta",
       step: 1,
       color: "text-[#d4a359]",
       bg: "bg-[#211a12]",
@@ -519,7 +519,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                         <Video className="w-3 h-3" />
                       )}
                       <span className="text-[10px] hidden sm:inline">
-                        {ev.meet_link ? "Meet" : "Criar Meet"}
+                        {ev.meet_link ? "Reunião" : "Criar Meet"}
                       </span>
                     </button>
 
@@ -540,7 +540,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                         <FolderOpen className="w-3 h-3" />
                       )}
                       <span className="text-[10px] hidden sm:inline">
-                        {ev.drive_folder_url ? "Drive" : "Pastas RAW"}
+                        {ev.drive_folder_url ? "Pastas" : "Criar Pastas"}
                       </span>
                     </button>
 

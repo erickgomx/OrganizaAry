@@ -150,9 +150,9 @@ export function TaskModal({
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
                 className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 px-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
               >
-                <option value="todo">To Do (A Fazer)</option>
-                <option value="in_progress">In Progress (Em Andamento)</option>
-                <option value="done">Done (Concluído)</option>
+                <option value="todo">A Fazer</option>
+                <option value="in_progress">Em Andamento</option>
+                <option value="done">Concluído</option>
               </select>
             </div>
 

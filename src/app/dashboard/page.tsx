@@ -150,7 +150,7 @@ export default async function DashboardPage() {
           <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4 flex items-center justify-between">
             <div className="space-y-0.5">
               <p className="text-[11px] font-medium uppercase tracking-wider text-[#8e887f]">
-                Atenção no Kanban
+                Tarefas com Atenção
               </p>
               <p className="text-2xl font-semibold text-[#d48970] tabular-nums">
                 {urgentOrOverdueTasks.length}
@@ -294,7 +294,7 @@ export default async function DashboardPage() {
               </div>
               <div>
                 <h4 className="font-medium text-[#f6f4ef] text-sm group-hover:text-white transition-colors">
-                  Kanban de Tarefas
+                  Tarefas & Pós-Produção
                 </h4>
                 <p className="text-[11px] text-[#8e887f] mt-0.5 leading-relaxed">
                   Fluxo de edição e entregas com prioridades e prazos.

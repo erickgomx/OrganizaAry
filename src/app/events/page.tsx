@@ -51,7 +51,7 @@ export default async function EventsPage() {
             Captações & Pipeline de Eventos
           </h1>
           <p className="text-xs sm:text-sm text-[#9d978d]">
-            Fluxo em 5 etapas: Orçamento/Lead &rarr; Agendado &rarr; Captação &rarr; Pós-Produção &rarr; Finalizado.
+            Fluxo em 5 etapas: Orçamento/Proposta &rarr; Agendado &rarr; Captação &rarr; Pós-Produção &rarr; Finalizado.
           </p>
         </div>
 

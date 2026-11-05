@@ -59,7 +59,7 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
     { label: string; color: string; bg: string; border: string }
   > = {
     budget_lead: {
-      label: "Orçamento / Lead",
+      label: "Orçamento / Proposta",
       color: "text-[#d4a359]",
       bg: "bg-[#211a12]",
       border: "border-[#382b1d]",

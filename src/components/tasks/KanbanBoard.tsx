@@ -55,22 +55,22 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
   }[] = [
     {
       id: "todo",
-      title: "To Do",
-      subtitle: "Backlog & A Fazer",
+      title: "A Fazer",
+      subtitle: "Backlog & Novas Tarefas",
       color: "border-[#26231f] bg-[#141311]",
       accent: "text-[#8e887f] bg-[#1c1a18] border border-[#2d2822]",
     },
     {
       id: "in_progress",
-      title: "In Progress",
-      subtitle: "Edição & Pós Ativa",
+      title: "Em Andamento",
+      subtitle: "Edição & Pós-Produção",
       color: "border-[#252c38]/40 bg-[#131518]/60",
       accent: "text-[#94a3b8] bg-[#161a20] border border-[#252c38]",
     },
     {
       id: "done",
-      title: "Done",
-      subtitle: "Entregue & Concluído",
+      title: "Concluído",
+      subtitle: "Entregue & Finalizado",
       color: "border-[#273829]/40 bg-[#121613]/60",
       accent: "text-[#9fc193] bg-[#162017] border border-[#273829]",
     },
@@ -187,7 +187,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
             onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | "all")}
             className="rounded-xl border border-[#26231f] bg-[#151412] py-2 px-3 text-xs text-[#9d978d] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
           >
-            <option value="all">Todas prioridades</option>
+            <option value="all">Todas as prioridades</option>
             <option value="urgent">Urgente</option>
             <option value="high">Alta</option>
             <option value="medium">Média</option>
@@ -280,6 +280,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                 onClick={() => handleToggleDone(task.id, task.is_done)}
                                 type="button"
                                 className="mt-0.5 text-[#736e65] hover:text-[#c8a97e] transition-colors shrink-0"
+                                title={task.is_done ? "Marcar como não concluída" : "Marcar como concluída"}
                               >
                                 {task.is_done ? (
                                   <CheckCircle2 className="w-4 h-4 text-[#9fc193]" />

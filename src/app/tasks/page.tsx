@@ -7,8 +7,8 @@ import { KanbanBoard } from "@/components/tasks/KanbanBoard";
 import { KanbanSquare, CheckSquare, Clock, AlertTriangle } from "lucide-react";
 
 export const metadata = {
-  title: "Kanban de Tarefas | OrganizaAry",
-  description: "Quadro interativo de pós-produção com colunas To Do, In Progress e Done.",
+  title: "Tarefas de Pós-Produção | OrganizaAry",
+  description: "Quadro interativo de pós-produção com colunas A Fazer, Em Andamento e Concluído.",
 };
 
 export default async function TasksPage() {
@@ -59,7 +59,7 @@ export default async function TasksPage() {
               <CheckSquare className="w-4 h-4" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f]">A Fazer (To Do)</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f]">A Fazer</p>
               <p className="text-lg font-semibold text-[#f6f4ef] tabular-nums">{todoCount}</p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export default async function TasksPage() {
               <CheckSquare className="w-4 h-4" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f]">Concluídas (Done)</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f]">Concluídas</p>
               <p className="text-lg font-semibold text-[#9fc193] tabular-nums">{doneCount}</p>
             </div>
           </div>
