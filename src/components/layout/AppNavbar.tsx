@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, KanbanSquare, Camera } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, KanbanSquare } from "lucide-react";
 import { SignOutButton } from "./SignOutButton";
 import { Profile } from "@/types/database";
 
@@ -26,8 +27,14 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       <header className="sticky top-0 z-40 w-full border-b border-neutral-800/80 bg-neutral-950/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 border border-neutral-800 text-white">
-              <Camera className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 border border-neutral-800 overflow-hidden p-1 shadow-sm">
+              <Image
+                src="/logo.png"
+                alt="OrganizaAry"
+                width={36}
+                height={36}
+                className="h-full w-full object-contain"
+              />
             </div>
             <span className="font-bold text-sm tracking-tight text-white">
               OrganizaAry
