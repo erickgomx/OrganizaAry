@@ -44,16 +44,16 @@ export async function getAuthenticatedGoogleClient(userId: string) {
     .eq("id", userId)
     .single();
 
-  if (error || !profile?.google_refresh_token) {
+  if (error || (!profile?.google_refresh_token && !profile?.google_access_token)) {
     throw new Error(
-      "Google Refresh Token não encontrado para este usuário. Faça login novamente concedendo as permissões necessárias."
+      "Autorização do Google não encontrada para este usuário. Faça login com o Google permitindo o acesso à agenda e ao drive."
     );
   }
 
   const oauth2Client = createGoogleOAuth2Client();
 
   oauth2Client.setCredentials({
-    refresh_token: profile.google_refresh_token,
+    refresh_token: profile.google_refresh_token || undefined,
     access_token: profile.google_access_token || undefined,
   });
 
