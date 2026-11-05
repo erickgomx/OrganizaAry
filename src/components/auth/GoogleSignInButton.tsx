@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -26,7 +26,6 @@ export function GoogleSignInButton() {
           scopes: [
             "https://www.googleapis.com/auth/calendar.events",
             "https://www.googleapis.com/auth/calendar",
-            "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/userinfo.email",
             "https://www.googleapis.com/auth/userinfo.profile",
             "openid",

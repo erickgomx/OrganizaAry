@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { X, Loader2, User, Phone, Mail, FileText, Trash2 } from "lucide-react";
@@ -82,15 +82,15 @@ export function ClientModal({ isOpen, onClose, client, onSuccess }: ClientModalP
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Nome Completo *
             </label>
-            <div className="relative">
-              <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Itally Ariane"
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
@@ -99,14 +99,14 @@ export function ClientModal({ isOpen, onClose, client, onSuccess }: ClientModalP
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Telefone / WhatsApp
             </label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
                 type="text"
                 value={formData.phone || ""}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="Ex: (11) 98765-4321"
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
@@ -115,32 +115,30 @@ export function ClientModal({ isOpen, onClose, client, onSuccess }: ClientModalP
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               E-mail
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
                 type="email"
                 value={formData.email || ""}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="Ex: cliente@email.com"
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
-              Observações & Briefing
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+              <FileText className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+              <span>Observações & Briefing</span>
             </label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
-              <textarea
-                rows={3}
-                value={formData.notes || ""}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Preferências de ensaio, indicações ou restrições..."
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
-              />
-            </div>
+            <textarea
+              rows={3}
+              value={formData.notes || ""}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Preferências de ensaio, indicações ou restrições..."
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
+            />
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">

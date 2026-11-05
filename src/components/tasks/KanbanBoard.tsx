@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,7 @@ import {
   Search,
   Film,
   Flame,
+  ChevronDown,
 } from "lucide-react";
 import {
   TaskWithDetails,
@@ -171,28 +172,31 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
       {/* Top Filter & Creation Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="flex flex-1 items-center gap-2 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+          <div className="relative flex-1 flex items-center">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar tarefas, descrições ou projetos..."
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | "all")}
-            className="rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#968a9c] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
-          >
-            <option value="all">Todas as prioridades</option>
-            <option value="urgent">Urgente</option>
-            <option value="high">Alta</option>
-            <option value="medium">Média</option>
-            <option value="low">Baixa</option>
-          </select>
+          <div className="relative flex items-center">
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | "all")}
+              className="appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-3 pr-8 text-xs text-[#968a9c] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+            >
+              <option value="all" className="bg-[#1a151f] text-[#f4eff5]">Todas as prioridades</option>
+              <option value="urgent" className="bg-[#1a151f] text-[#f4eff5]">Urgente</option>
+              <option value="high" className="bg-[#1a151f] text-[#f4eff5]">Alta</option>
+              <option value="medium" className="bg-[#1a151f] text-[#f4eff5]">Média</option>
+              <option value="low" className="bg-[#1a151f] text-[#f4eff5]">Baixa</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e6375] pointer-events-none shrink-0" />
+          </div>
         </div>
 
         <button

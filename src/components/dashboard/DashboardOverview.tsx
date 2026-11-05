@@ -7,7 +7,6 @@ import {
   Clock,
   MapPin,
   MessageCircle,
-  FolderOpen,
   Plus,
   CheckCircle2,
   Circle,
@@ -250,18 +249,6 @@ export function DashboardOverview({
                             <MapPin className="w-3 h-3 text-[#6e6375]" />
                             {ev.location}
                           </span>
-                        )}
-                        {sanitizeExternalUrl(ev.drive_folder_url) && (
-                          <a
-                            href={sanitizeExternalUrl(ev.drive_folder_url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[#d4a359] hover:underline"
-                            title="Pasta no Google Drive"
-                          >
-                            <FolderOpen className="w-3 h-3" />
-                            <span>Drive</span>
-                          </a>
                         )}
                       </div>
                     </div>

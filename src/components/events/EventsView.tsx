@@ -7,7 +7,6 @@ import {
   Clock,
   MapPin,
   MessageCircle,
-  FolderOpen,
   Search,
   Check,
   CheckCircle2,
@@ -33,6 +32,7 @@ import { EventStatus } from "@/types/database";
 import { EventModal } from "./EventModal";
 import { TaskModal } from "@/components/tasks/TaskModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl } from "@/lib/utils";
 
 interface EventsViewProps {
@@ -253,14 +253,14 @@ export function EventsView({
 
         {/* Search & Action Button */}
         <div className="flex items-center gap-2">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+          <div className="relative flex-1 sm:w-64 flex items-center">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por nome ou trabalho..."
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
@@ -419,17 +419,17 @@ export function EventsView({
                     </div>
 
                     {/* Bottom: Fast Stage Progress & Links */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#33293c]">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#33293c]">
                       {nextStatusObj ? (
-                        <button
-                          onClick={() => handleStatusChange(ev.id, nextStatusObj.key)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#231c29] hover:bg-[#33293c] border border-[#33293c] text-[#f4eff5] text-xs font-medium transition-all"
-                        >
-                          <span>{nextStatusObj.nextLabel || nextStatusObj.label}</span>
-                          <ArrowRight className="w-3 h-3 text-[#9873a1]" />
-                        </button>
+                        <div className="w-full sm:w-auto flex-1 max-w-sm">
+                          <SlideToConfirm
+                            key={`${ev.id}-${ev.status}`}
+                            label={nextStatusObj.nextLabel || nextStatusObj.label}
+                            onConfirm={() => handleStatusChange(ev.id, nextStatusObj.key)}
+                          />
+                        </div>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-medium text-[#9fc193]">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#9fc193] py-1">
                           <Check className="w-3.5 h-3.5" />
                           <span>Finalizado & Entregue</span>
                         </span>
@@ -437,18 +437,6 @@ export function EventsView({
 
                       {/* Subtle Google Links (Only when ready) */}
                       <div className="flex items-center gap-2">
-                        {sanitizeExternalUrl(ev.drive_folder_url) && (
-                          <a
-                            href={sanitizeExternalUrl(ev.drive_folder_url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a151f] text-[#d4a359] border border-[#33293c] hover:border-[#d4a359]/30 text-[11px] transition-colors"
-                            title="Abrir pasta no Google Drive"
-                          >
-                            <FolderOpen className="w-3 h-3" />
-                            <span>Pasta RAWs/Entregas</span>
-                          </a>
-                        )}
                         {sanitizeExternalUrl(ev.meet_link) && (
                           <a
                             href={sanitizeExternalUrl(ev.meet_link)}

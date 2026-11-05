@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
-import { X, Loader2, CheckSquare, Calendar, Flag, AlignLeft, Film, Trash2 } from "lucide-react";
+import { X, Loader2, CheckSquare, Calendar, Flag, AlignLeft, Film, Trash2, ChevronDown } from "lucide-react";
 import { createTaskAction, updateTaskAction, deleteTaskAction, TaskInput, TaskWithDetails } from "@/actions/tasks";
 import { TaskPriority, TaskStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -118,7 +118,7 @@ export function TaskModal({
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Curadoria de fotos, Color grading do teaser"
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
@@ -126,20 +126,21 @@ export function TaskModal({
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Captação / Evento Vinculado
             </label>
-            <div className="relative">
-              <Film className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <Film className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <select
                 value={formData.eventId || ""}
                 onChange={(e) => setFormData({ ...formData, eventId: e.target.value || null })}
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
-                <option value="">Geral (Sem evento específico)</option>
+                <option value="" className="bg-[#1a151f] text-[#f4eff5]">Geral (Sem evento específico)</option>
                 {events.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
+                  <option key={ev.id} value={ev.id} className="bg-[#1a151f] text-[#f4eff5]">
                     {ev.title} {ev.clientName ? `(${ev.clientName})` : ""}
                   </option>
                 ))}
               </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             </div>
           </div>
 
@@ -148,35 +149,39 @@ export function TaskModal({
               <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
                 Coluna / Estado
               </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
-              >
-                <option value="todo">A Fazer</option>
-                <option value="in_progress">Em Andamento</option>
-                <option value="done">Concluído</option>
-              </select>
+              <div className="relative flex items-center">
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+                  className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-3 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                >
+                  <option value="todo" className="bg-[#1a151f] text-[#f4eff5]">A Fazer</option>
+                  <option value="in_progress" className="bg-[#1a151f] text-[#f4eff5]">Em Andamento</option>
+                  <option value="done" className="bg-[#1a151f] text-[#f4eff5]">Concluído</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
+              </div>
             </div>
 
             <div>
               <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
                 Prioridade
               </label>
-              <div className="relative">
-                <Flag className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+              <div className="relative flex items-center">
+                <Flag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
                 <select
                   value={formData.priority}
                   onChange={(e) =>
                     setFormData({ ...formData, priority: e.target.value as TaskPriority })
                   }
-                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                  className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
                 >
-                  <option value="low">Baixa</option>
-                  <option value="medium">Média</option>
-                  <option value="high">Alta</option>
-                  <option value="urgent">Urgente</option>
+                  <option value="low" className="bg-[#1a151f] text-[#f4eff5]">Baixa</option>
+                  <option value="medium" className="bg-[#1a151f] text-[#f4eff5]">Média</option>
+                  <option value="high" className="bg-[#1a151f] text-[#f4eff5]">Alta</option>
+                  <option value="urgent" className="bg-[#1a151f] text-[#f4eff5]">Urgente</option>
                 </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               </div>
             </div>
           </div>
@@ -185,31 +190,29 @@ export function TaskModal({
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Data Limite (Prazo de Entrega)
             </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
                 type="date"
                 value={formData.dueDate || ""}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value || null })}
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
-              Detalhes / Checklist de Pós
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+              <AlignLeft className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+              <span>Detalhes / Checklist</span>
             </label>
-            <div className="relative">
-              <AlignLeft className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
-              <textarea
-                rows={3}
-                value={formData.description || ""}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Instruções de exportação, proporção de aspecto, ajustes do cliente..."
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
-              />
-            </div>
+            <textarea
+              rows={3}
+              value={formData.description || ""}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Instruções de exportação, proporção de aspecto, ajustes do cliente..."
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
+            />
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">

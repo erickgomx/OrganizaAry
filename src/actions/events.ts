@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Event, EventStatus, Client, Database } from "@/types/database";
 import { syncEventToGoogleCalendar } from "@/lib/google/calendar";
-import { createGoogleDriveFoldersForEvent } from "@/lib/google/drive";
 
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
@@ -139,7 +138,6 @@ export async function createEventAction(input: EventInput) {
     if (profile?.google_refresh_token) {
       const eventInfo = data as unknown as EventWithClientInfo;
       syncEventToGoogleCalendar(user.id, eventInfo).catch(() => {});
-      createGoogleDriveFoldersForEvent(user.id, eventInfo).catch(() => {});
     }
   } catch {
     // Automação não bloqueia a criação
@@ -236,7 +234,6 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
       if (profile?.google_refresh_token) {
         const ev = data as unknown as EventWithClientInfo;
         syncEventToGoogleCalendar(user.id, ev).catch(() => {});
-        createGoogleDriveFoldersForEvent(user.id, ev).catch(() => {});
       }
     } catch {}
   }

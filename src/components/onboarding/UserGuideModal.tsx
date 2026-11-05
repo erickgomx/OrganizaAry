@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   Calendar,
   MessageCircle,
-  FolderCheck,
   LayoutDashboard,
   Users,
   CheckSquare,
@@ -88,9 +87,9 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
     },
     {
       stepLabel: "3 de 3",
-      title: "Google no Piloto Automático",
-      subtitle: "Pastas e agenda criadas sem esforço",
-      icon: FolderCheck,
+      title: "Google Calendar & Meet Integrados",
+      subtitle: "Sua agenda e reuniões sincronizadas sem esforço",
+      icon: Cloud,
       content: (
         <div className="space-y-3 text-xs text-[#968a9c] leading-relaxed">
           <p>
@@ -98,15 +97,15 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
           </p>
           <div className="space-y-2 pt-1">
             <div className="p-2.5 rounded-lg bg-[#231c29] border border-[#33293c]">
-              <p className="font-medium text-[#f4eff5]">📁 Pastas no Google Drive</p>
-              <p className="text-[11px] text-[#6e6375] mt-0.5">
-                Criadas automaticamente com a estrutura <code className="text-[#9873a1]">[RAWs]</code> e <code className="text-[#9873a1]">[Entregas]</code>.
-              </p>
-            </div>
-            <div className="p-2.5 rounded-lg bg-[#231c29] border border-[#33293c]">
               <p className="font-medium text-[#f4eff5]">🗓️ Google Calendar</p>
               <p className="text-[11px] text-[#6e6375] mt-0.5">
                 Seus ensaios agendados aparecem automaticamente no seu calendário do celular.
+              </p>
+            </div>
+            <div className="p-2.5 rounded-lg bg-[#231c29] border border-[#33293c]">
+              <p className="font-medium text-[#f4eff5]">🎥 Google Meet</p>
+              <p className="text-[11px] text-[#6e6375] mt-0.5">
+                Gere links de videoconferência em 1 clique para reuniões de alinhamento com clientes.
               </p>
             </div>
           </div>
@@ -167,7 +166,7 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
         },
         {
           title: "Indicador de Conexão Google",
-          desc: "Mostra se seu Google Drive e Agenda estão conectados e operando normalmente.",
+          desc: "Mostra se seu Google Calendar e Meet estão conectados e operando normalmente.",
         },
       ],
       stepByStep: [
@@ -192,10 +191,6 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
           desc: "Selecione o cliente, defina tipo de trabalho (Ensaio, Casamento, 15 Anos, Corporativo), data, horário e valor.",
         },
         {
-          title: "📁 Pastas Automáticas no Google Drive",
-          desc: "O sistema cria a pasta do cliente automaticamente com duas subpastas: [RAWs] (para descarregar cartões) e [Entregas] (para fotos exportadas).",
-        },
-        {
           title: "🗓️ Google Calendar Instantâneo",
           desc: "O ensaio entra na hora no calendário do seu celular, com lembrete e detalhes do local.",
         },
@@ -212,9 +207,9 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
         "Clique no botão '+ Novo Trabalho' na página de Trabalhos ou no Início.",
         "Selecione o cliente (se for novo, você pode cadastrá-lo na hora).",
         "Preencha data, horário, localização e o valor combinado.",
-        "Após salvar, clique no ícone do Drive para ver a pasta pronta ou no WhatsApp para avisar o cliente!",
+        "Após salvar, seu ensaio já estará sincronizado na agenda e pronto para você chamar o cliente no WhatsApp!",
       ],
-      tip: "Assim que terminar a captação, mude o status para 'Em Edição' para não esquecer de descarregar os cartões.",
+      tip: "Assim que terminar a captação, mude o status para 'Em Edição' para acompanhar o prazo de entrega nas Tarefas.",
     },
     {
       id: "clients" as InstructionSection,
@@ -283,30 +278,26 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
       label: "Google",
       icon: Cloud,
       badge: "Automações",
-      title: "Integração Google Workspace",
-      subtitle: "Pastas no Drive, compromissos na Agenda e salas no Meet sem trabalho manual.",
+      title: "Google Calendar & Google Meet",
+      subtitle: "Compromissos na Agenda e salas virtuais no Meet sem trabalho manual.",
       description:
-        "O OrganizaAry integra-se de forma nativa e segura aos serviços do Google Workspace para que você economize horas de trabalho repetitivo todos os meses.",
+        "O OrganizaAry integra-se de forma nativa e segura aos serviços do Google Workspace para que você mantenha sua agenda e reuniões sempre organizadas.",
       highlights: [
         {
-          title: "Estrutura Padrão no Google Drive",
-          desc: "As pastas são criadas automaticamente no padrão: 'Ano-Mês-Dia - Nome do Cliente' com as subpastas [RAWs] e [Entregas].",
-        },
-        {
           title: "Sincronização na Agenda do Celular",
-          desc: "Todo ensaio cadastrado sincroniza com o Google Calendar do seu smartphone, com notificações automáticas.",
+          desc: "Todo ensaio cadastrado sincroniza com o Google Calendar do seu smartphone, com notificações e horários automáticos.",
         },
         {
           title: "Videochamadas com 1 Clique",
-          desc: "Cria links do Google Meet para reuniões de alinhamento com clientes sem precisar abrir o navegador.",
+          desc: "Cria links do Google Meet para reuniões de alinhamento e briefing com clientes sem precisar abrir o navegador.",
         },
       ],
       stepByStep: [
-        "Ao fazer login com o Google, conceda as permissões solicitadas.",
+        "Ao fazer login com o Google, conceda as permissões de calendário solicitadas.",
         "Confira o selo 'Google Sincronizado' no topo da barra de navegação.",
         "Se aparecer 'Google Pendente', basta sair e entrar de novo para renovar a autorização de forma rápida.",
       ],
-      tip: "Os arquivos brutos (RAWs) e finais ficam sempre no seu próprio Google Drive, com total controle e privacidade.",
+      tip: "A sincronização com o Google Calendar evita choque de datas e mantém seus horários de captação sempre visíveis no celular.",
     },
     {
       id: "tips" as InstructionSection,
@@ -319,8 +310,8 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
         "Pequenos hábitos no dia a dia evitam surpresas desagradáveis e garantem a melhor experiência possível tanto para você quanto para os seus clientes.",
       highlights: [
         {
-          title: "1. Regra de Ouro do Backup Duplo",
-          desc: "Assim que chegar da captação, descarregue os arquivos brutos na pasta [RAWs] antes de qualquer coisa. Só formate o cartão de memória depois que o backup estiver confirmado.",
+          title: "1. Confirmação Prévia no WhatsApp",
+          desc: "Use o botão de WhatsApp 1 dia antes do ensaio para confirmar horário, clima, local e tirar dúvidas de figurino.",
         },
         {
           title: "2. Briefing e Expectativas Claras",
@@ -328,7 +319,7 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
         },
         {
           title: "3. WhatsApp com Mensagens Ágeis",
-          desc: "Use o botão de WhatsApp 1 dia antes do ensaio para confirmar horário, clima e tirar dúvidas de figurino.",
+          desc: "Cadastre o telefone sempre com DDD para iniciar conversas com um toque sem precisar salvar contatos na agenda.",
         },
         {
           title: "4. Prazos Realistas",
@@ -336,8 +327,8 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
         },
       ],
       stepByStep: [
-        "Cadastre o cliente com antecedência.",
-        "Crie o trabalho e verifique se as pastas do Drive foram criadas.",
+        "Cadastre o cliente com antecedência e notas de briefing.",
+        "Crie o trabalho para sincronizar na agenda do celular.",
         "Execute a captação e mantenha o status atualizado até a entrega final.",
       ],
       tip: "Você pode consultar este guia e as instruções extras sempre que quiser clicando em 'Guia & Instruções' no topo da tela!",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Calendar, MapPin, DollarSign, User, FileText, CheckCircle, Trash2 } from "lucide-react";
+import { X, Loader2, Calendar, MapPin, DollarSign, User, FileText, CheckCircle, Trash2, ChevronDown } from "lucide-react";
 import { createEventAction, updateEventAction, deleteEventAction, EventInput, EventWithClientInfo } from "@/actions/events";
 import { EventStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -118,24 +118,25 @@ export function EventModal({
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Cliente Vinculado *
             </label>
-            <div className="relative">
-              <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <select
                 required
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
                 {clients.length === 0 ? (
-                  <option value="">Nenhum cliente cadastrado ainda</option>
+                  <option value="" className="bg-[#1a151f] text-[#f4eff5]">Nenhum cliente cadastrado ainda</option>
                 ) : (
                   clients.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.id} className="bg-[#1a151f] text-[#f4eff5]">
                       {c.name}
                     </option>
                   ))
                 )}
               </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             </div>
           </div>
 
@@ -149,7 +150,7 @@ export function EventModal({
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Ensaio Gestante, Casamento Itally & Erick"
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
@@ -164,7 +165,7 @@ export function EventModal({
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
+                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
                 />
               </div>
             </div>
@@ -173,8 +174,8 @@ export function EventModal({
               <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
                 Valor Cobrado (R$)
               </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+              <div className="relative flex items-center">
+                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
                 <input
                   type="number"
                   step="0.01"
@@ -184,7 +185,7 @@ export function EventModal({
                     setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors tabular-nums"
+                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors tabular-nums"
                 />
               </div>
             </div>
@@ -194,14 +195,14 @@ export function EventModal({
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Localização / Set
             </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
                 type="text"
                 value={formData.location || ""}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Ex: Praia da Joaquina, Estúdio Central"
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
@@ -210,36 +211,35 @@ export function EventModal({
             <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Fase da Máquina de Estados (Status)
             </label>
-            <div className="relative">
-              <CheckCircle className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
+            <div className="relative flex items-center">
+              <CheckCircle className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
-                <option value="budget_lead">1. Orçamento / Proposta</option>
-                <option value="scheduled">2. Agendado (Fechado)</option>
-                <option value="captured">3. Captação Concluída</option>
-                <option value="post_production">4. Pós-Produção</option>
-                <option value="finished">5. Finalizado</option>
+                <option value="budget_lead" className="bg-[#1a151f] text-[#f4eff5]">1. Orçamento / Proposta</option>
+                <option value="scheduled" className="bg-[#1a151f] text-[#f4eff5]">2. Agendado (Fechado)</option>
+                <option value="captured" className="bg-[#1a151f] text-[#f4eff5]">3. Captação Concluída</option>
+                <option value="post_production" className="bg-[#1a151f] text-[#f4eff5]">4. Pós-Produção</option>
+                <option value="finished" className="bg-[#1a151f] text-[#f4eff5]">5. Finalizado</option>
               </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
-              Briefing / Observações
+            <label className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+              <FileText className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+              <span>Briefing / Observações</span>
             </label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
-              <textarea
-                rows={2}
-                value={formData.notes || ""}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
-              />
-            </div>
+            <textarea
+              rows={2}
+              value={formData.notes || ""}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
+            />
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">
