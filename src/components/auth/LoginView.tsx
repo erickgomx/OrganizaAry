@@ -1,0 +1,119 @@
+"use client";
+
+import { motion } from "framer-motion";
+import Image from "next/image";
+import { Calendar, Film, CheckSquare } from "lucide-react";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+
+interface LoginViewProps {
+  error?: string | string[] | undefined;
+}
+
+export function LoginView({ error }: LoginViewProps) {
+  const errorMessage = Array.isArray(error) ? error[0] : error;
+
+  return (
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#0e0d0c] text-[#f6f4ef] px-4 py-8 sm:px-6 lg:px-8 selection:bg-[#c8a97e]/20 selection:text-[#dfba88] overflow-hidden">
+      {/* Subtle atmospheric ambient glow matching logo warmth */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(200,169,126,0.08)_0%,_transparent_65%)] pointer-events-none"
+      />
+
+      {/* Central Login Card */}
+      <motion.main
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{
+          duration: 0.75,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="relative z-10 max-w-sm w-full mx-auto"
+      >
+        <div className="rounded-2xl border border-[#272420] bg-[#161513]/90 p-6 sm:p-7 backdrop-blur-sm shadow-2xl space-y-6">
+          {/* Logo Emblem & Heading */}
+          <div className="flex flex-col items-center text-center space-y-3">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.65, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <Image
+                src="/logo.png"
+                alt="Organiza Ary Logo"
+                width={112}
+                height={112}
+                className="w-28 h-28 object-contain drop-shadow-md select-none"
+                priority
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="space-y-1"
+            >
+              <h1 className="text-xl font-semibold text-[#f6f4ef] tracking-tight">
+                Organiza Ary
+              </h1>
+              <p className="text-xs text-[#9d978d] leading-relaxed">
+                Gestão simplificada de ensaios, clientes e pós-produção.
+              </p>
+            </motion.div>
+          </div>
+
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-xl border border-red-900/30 bg-red-950/20 p-3 text-xs text-red-300"
+            >
+              {errorMessage === "auth_callback_failed"
+                ? "Não foi possível concluir a autenticação com o Google. Tente novamente."
+                : "Erro na autenticação. Por favor, tente novamente."}
+            </motion.div>
+          )}
+
+          {/* Single Sign-On Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-1"
+          >
+            <GoogleSignInButton />
+          </motion.div>
+
+          {/* Módulos Integrados */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-4 border-t border-[#23201c] space-y-2"
+          >
+            <p className="text-[10px] uppercase font-medium tracking-wider text-[#736e65]">
+              Módulos Integrados
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-[11px] text-[#9d978d]">
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420] transition-colors hover:border-[#c8a97e]/30">
+                <Calendar className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Agenda</span>
+              </div>
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420] transition-colors hover:border-[#c8a97e]/30">
+                <Film className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Captação</span>
+              </div>
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420] transition-colors hover:border-[#c8a97e]/30">
+                <CheckSquare className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Edição</span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </motion.main>
+    </div>
+  );
+}
