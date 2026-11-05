@@ -40,7 +40,7 @@ export function DashboardOverview({
   const pendingTasks = tasks.filter((t) => !t.is_done);
   const nextEvents = events
     .filter((e) => e.status !== "finished")
-    .slice(0, 5);
+    .slice(0, 6);
 
   const handleToggleTask = async (taskId: string, currentIsDone: boolean) => {
     const nextIsDone = !currentIsDone;
@@ -65,19 +65,23 @@ export function DashboardOverview({
     }).format(val);
   };
 
-  const formatDate = (isoString: string) => {
-    return new Intl.DateTimeFormat("pt-BR", {
-      weekday: "short",
-      day: "2-digit",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(isoString));
-  };
-
   const cleanPhone = (phone?: string | null) => {
     if (!phone) return "";
     return phone.replace(/\D/g, "");
+  };
+
+  const parseDateParts = (isoString: string) => {
+    const d = new Date(isoString);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = new Intl.DateTimeFormat("pt-BR", { month: "short" })
+      .format(d)
+      .replace(".", "")
+      .toUpperCase();
+    const time = new Intl.DateTimeFormat("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(d);
+    return { day, month, time };
   };
 
   return (
@@ -116,7 +120,7 @@ export function DashboardOverview({
 
       {/* Two Clean Actionable Columns: Agenda & Edição */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Coluna 1: Próximas Captações da Agenda */}
+        {/* Coluna 1: Próximos Ensaios na Agenda */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8e887f] flex items-center gap-1.5">
@@ -135,7 +139,9 @@ export function DashboardOverview({
           {nextEvents.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-8 text-center space-y-2">
               <Calendar className="w-6 h-6 text-[#736e65] mx-auto" />
-              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">Nenhum ensaio pendente na agenda.</p>
+              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">
+                Nenhum ensaio pendente na agenda.
+              </p>
               <button
                 onClick={() => setIsEventModalOpen(true)}
                 className="text-xs text-[#c8a97e] hover:underline font-medium"
@@ -147,79 +153,71 @@ export function DashboardOverview({
             <div className="space-y-2.5">
               {nextEvents.map((ev) => {
                 const phone = cleanPhone(ev.client?.phone);
+                const { day, month, time } = parseDateParts(ev.date);
+
                 return (
                   <div
                     key={ev.id}
-                    className="group rounded-2xl border border-[#26231f] bg-[#151412] p-4 hover:border-[#38332c] hover:bg-[#181715] transition-all shadow-sm space-y-2.5"
+                    className="group rounded-2xl border border-[#26231f] bg-[#151412] p-4 hover:border-[#38332c] hover:bg-[#181715] transition-all shadow-sm flex items-start gap-3.5"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h4 className="font-semibold text-sm text-[#f6f4ef] leading-snug">
-                          {ev.title}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          {ev.client && (
-                            <span className="text-xs text-[#8e887f]">
-                              {ev.client.name}
-                            </span>
-                          )}
-                          {phone && (
-                            <a
-                              href={`https://wa.me/55${phone}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#162017] text-[#9fc193] border border-[#273829] text-[10px] font-medium hover:bg-[#1e2e20] transition-colors"
-                              title="Abrir WhatsApp"
-                            >
-                              <MessageCircle className="w-2.5 h-2.5" />
-                              <span>WhatsApp</span>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-semibold text-[#dfba88] tabular-nums shrink-0">
-                        {formatBRL(Number(ev.price))}
+                    {/* Clean Date Pill */}
+                    <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-[#1c1a18] border border-[#2e2923] shrink-0 text-center select-none">
+                      <span className="text-sm font-bold text-[#dfba88] tabular-nums leading-none">
+                        {day}
+                      </span>
+                      <span className="text-[9px] font-medium text-[#8e887f] uppercase tracking-wider mt-0.5">
+                        {month}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#23201c] text-[11px] text-[#8e887f]">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="flex items-center gap-1 text-[#dfba88] tabular-nums">
-                          <Clock className="w-3 h-3 text-[#c8a97e]" />
-                          {formatDate(ev.date)}
+                    {/* Shoot details */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-semibold text-sm text-[#f6f4ef] leading-snug truncate">
+                          {ev.title}
+                        </h4>
+                        <span className="text-xs font-semibold text-[#dfba88] tabular-nums shrink-0">
+                          {formatBRL(Number(ev.price))}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-[#8e887f]">
+                        {ev.client && <span>{ev.client.name}</span>}
+                        {phone && (
+                          <a
+                            href={`https://wa.me/55${phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#162017] text-[#9fc193] border border-[#273829] text-[10px] font-medium hover:bg-[#1e2e20] transition-colors"
+                            title="Abrir WhatsApp"
+                          >
+                            <MessageCircle className="w-2.5 h-2.5" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 text-[11px] text-[#736e65] pt-0.5">
+                        <span className="flex items-center gap-1 tabular-nums">
+                          <Clock className="w-3 h-3 text-[#736e65]" />
+                          {time}
                         </span>
                         {ev.location && (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 truncate max-w-[150px]">
                             <MapPin className="w-3 h-3 text-[#736e65]" />
                             {ev.location}
                           </span>
                         )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
                         {ev.drive_folder_url && (
                           <a
                             href={ev.drive_folder_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-[#d4a359] hover:underline"
-                            title="Abrir pasta no Google Drive"
+                            className="inline-flex items-center gap-1 text-[#d4a359] hover:underline"
+                            title="Pasta no Google Drive"
                           >
                             <FolderOpen className="w-3 h-3" />
-                            <span>Pasta Drive</span>
-                          </a>
-                        )}
-                        {ev.meet_link && (
-                          <a
-                            href={ev.meet_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-[#94a3b8] hover:underline"
-                            title="Entrar no Google Meet"
-                          >
-                            <Video className="w-3 h-3" />
-                            <span>Reunião</span>
+                            <span>Drive</span>
                           </a>
                         )}
                       </div>
@@ -250,7 +248,9 @@ export function DashboardOverview({
           {pendingTasks.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-8 text-center space-y-2">
               <CheckCircle2 className="w-6 h-6 text-[#9fc193] mx-auto" />
-              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">Tudo entregue! Nenhuma edição pendente.</p>
+              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">
+                Tudo entregue! Nenhuma edição pendente.
+              </p>
               <button
                 onClick={() => setIsTaskModalOpen(true)}
                 className="text-xs text-[#c8a97e] hover:underline font-medium"
@@ -300,6 +300,13 @@ export function DashboardOverview({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Footer Copyright */}
+      <div className="pt-8 text-center border-t border-[#23201c]/60">
+        <p className="text-[11px] text-[#736e65]">
+          &copy; {new Date().getFullYear()} EAREC Produtora Audiovisual &bull; Todos os direitos reservados
+        </p>
       </div>
 
       {/* Modais */}

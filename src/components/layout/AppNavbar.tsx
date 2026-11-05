@@ -44,16 +44,15 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       <header className="sticky top-0 z-40 w-full border-b border-[#23201c] bg-[#121110]/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#181715] border border-[#c8a97e]/30 overflow-hidden p-1 shadow-sm transition-all group-hover:border-[#c8a97e]/60">
-              <Image
-                src="/logo.png"
-                alt="OrganizaAry"
-                width={32}
-                height={32}
-                className="h-full w-full object-contain"
-              />
-            </div>
-            <span className="font-semibold text-xs sm:text-sm tracking-tight text-[#f6f4ef] group-hover:text-white transition-colors">
+            <Image
+              src="/logo.png"
+              alt="OrganizaAry"
+              width={38}
+              height={38}
+              className="h-9 w-9 object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-105"
+              priority
+            />
+            <span className="font-semibold text-xs sm:text-sm tracking-tight text-[#f6f4ef] group-hover:text-[#dfba88] transition-colors">
               OrganizaAry
             </span>
           </Link>

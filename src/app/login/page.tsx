@@ -5,7 +5,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export const metadata: Metadata = {
   title: "Login | OrganizaAry",
-  description: "Acesso à plataforma de gestão fotográfica e audiovisual OrganizaAry.",
+  description: "Acesso à plataforma OrganizaAry - EAREC Produtora Audiovisual.",
 };
 
 interface LoginPageProps {
@@ -24,21 +24,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       {/* Header / Brand */}
       <header className="relative z-10 flex items-center justify-between max-w-sm w-full mx-auto">
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#161513] border border-[#272420] p-1 shadow-sm">
-            <Image
-              src="/logo.png"
-              alt="OrganizaAry Logo"
-              width={36}
-              height={36}
-              className="w-full h-full object-contain"
-              priority
-            />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="OrganizaAry"
+            width={40}
+            height={40}
+            className="w-10 h-10 object-contain drop-shadow-sm"
+            priority
+          />
           <div>
-            <h1 className="text-sm font-medium tracking-tight text-[#f6f4ef]">
+            <h1 className="text-sm font-semibold tracking-tight text-[#f6f4ef]">
               OrganizaAry
             </h1>
-            <p className="text-[11px] text-[#8e887f]">Studio & Audiovisual</p>
+            <p className="text-[11px] text-[#8e887f]">EAREC Produtora Audiovisual</p>
           </div>
         </div>
       </header>
@@ -48,22 +46,20 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="rounded-2xl border border-[#272420] bg-[#161513]/90 p-6 sm:p-7 backdrop-blur-sm shadow-xl space-y-6">
           {/* Logo Emblem & Heading */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative w-24 h-24 rounded-full bg-[#1b1917]/80 border border-[#c8a97e]/20 p-3 shadow-inner flex items-center justify-center">
-              <Image
-                src="/logo.png"
-                alt="OrganizaAry Logo"
-                width={84}
-                height={84}
-                className="w-full h-full object-contain"
-                priority
-              />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="OrganizaAry Logo"
+              width={112}
+              height={112}
+              className="w-28 h-28 object-contain drop-shadow-md select-none"
+              priority
+            />
             <div className="space-y-1">
               <h2 className="text-lg font-semibold text-[#f6f4ef] tracking-tight">
                 Painel Operacional
               </h2>
               <p className="text-xs text-[#9d978d] leading-relaxed">
-                Gestão integrada de clientes, ensaios e pós-produção em um só lugar.
+                Gestão simplificada de ensaios, clientes e pós-produção.
               </p>
             </div>
           </div>
@@ -81,7 +77,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <GoogleSignInButton />
           </div>
 
-          {/* Feature indicators - delicate, restrained, fine-line */}
+          {/* Módulos Integrados */}
           <div className="pt-4 border-t border-[#23201c] space-y-2">
             <p className="text-[10px] uppercase font-medium tracking-wider text-[#736e65]">
               Módulos Integrados
@@ -97,7 +93,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </div>
               <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420]">
                 <CheckSquare className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
-                <span>Tarefas</span>
+                <span>Edição</span>
               </div>
             </div>
           </div>
@@ -107,7 +103,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       {/* Footer */}
       <footer className="relative z-10 max-w-sm w-full mx-auto text-center">
         <p className="text-[11px] text-[#736e65]">
-          OrganizaAry &copy; {new Date().getFullYear()} &bull; Todos os direitos reservados
+          &copy; {new Date().getFullYear()} EAREC Produtora Audiovisual &bull; Todos os direitos reservados
         </p>
       </footer>
     </div>

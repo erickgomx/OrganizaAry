@@ -5,15 +5,13 @@ import { ArrowLeft } from "lucide-react";
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] flex flex-col items-center justify-center p-6 text-center space-y-4 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
-      <div className="w-16 h-16 rounded-2xl bg-[#161513] border border-[#2d2822] flex items-center justify-center p-2.5 shadow-sm">
-        <Image
-          src="/logo.png"
-          alt="OrganizaAry"
-          width={64}
-          height={64}
-          className="w-full h-full object-contain"
-        />
-      </div>
+      <Image
+        src="/logo.png"
+        alt="OrganizaAry"
+        width={72}
+        height={72}
+        className="w-18 h-18 object-contain drop-shadow-sm select-none"
+      />
       <div className="space-y-1">
         <h2 className="text-lg font-semibold text-[#f6f4ef] tracking-tight">
           Página não encontrada (404)

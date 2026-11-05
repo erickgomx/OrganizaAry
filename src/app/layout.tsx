@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OrganizaAry | Gestão Fotográfica & Audiovisual",
-  description: "Plataforma minimalista e integrada para gestão de ensaios, clientes, pós-produção e Google Workspace.",
+  title: "OrganizaAry | EAREC Produtora Audiovisual",
+  description: "Gestão inteligente de captações, clientes e pós-produção. EAREC Produtora Audiovisual.",
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
