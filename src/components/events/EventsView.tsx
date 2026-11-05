@@ -14,9 +14,11 @@ import {
   Pencil,
   Trash2,
   MoreVertical,
-  ArrowRight,
   Video,
   CheckSquare,
+  ListChecks,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   EventWithClientInfo,
@@ -27,6 +29,7 @@ import {
   TaskWithDetails,
   toggleTaskDoneAction,
   deleteTaskAction,
+  toggleTaskChecklistItemAction,
 } from "@/actions/tasks";
 import { EventStatus } from "@/types/database";
 import { EventModal } from "./EventModal";
@@ -34,6 +37,7 @@ import { TaskModal } from "@/components/tasks/TaskModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl } from "@/lib/utils";
+import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 
 interface EventsViewProps {
   initialEvents: EventWithClientInfo[];
@@ -59,6 +63,41 @@ export function EventsView({
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [deletingTask, setDeletingTask] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
+  const [expandedTaskChecklists, setExpandedTaskChecklists] = useState<Record<string, boolean>>({});
+
+  const toggleChecklistExpand = (taskId: string) => {
+    setExpandedTaskChecklists((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
+  };
+
+  const handleToggleChecklistItem = async (
+    taskId: string,
+    itemId: string,
+    currentCompleted: boolean
+  ) => {
+    const nextCompleted = !currentCompleted;
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.id !== taskId) return t;
+        const { notes, checklist } = parseTaskDescription(t.description);
+        const updated = checklist.map((c) =>
+          c.id === itemId ? { ...c, completed: nextCompleted } : c
+        );
+        return {
+          ...t,
+          description: serializeTaskDescription(notes, updated),
+        };
+      })
+    );
+
+    try {
+      await toggleTaskChecklistItemAction(taskId, itemId, nextCompleted);
+    } catch (err) {
+      console.error("Erro ao atualizar checklist:", err);
+    }
+  };
 
   // Status Machine
   const statusMachine: {
@@ -480,94 +519,167 @@ export function EventsView({
             </div>
           ) : (
             <div className="space-y-2.5">
-              {filteredTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`rounded-2xl border p-4 flex items-center justify-between gap-3 transition-all shadow-sm ${
-                    task.is_done
-                      ? "border-[#231c29] bg-[#120e15] opacity-65"
-                      : "border-[#33293c] bg-[#120e15] hover:border-[#33293c] hover:bg-[#1a151f]"
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                    <button
-                      onClick={() => handleToggleTask(task.id, task.is_done)}
-                      type="button"
-                      className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
-                      title={task.is_done ? "Desmarcar conclusão" : "Concluir tarefa"}
-                    >
-                      {task.is_done ? (
-                        <CheckCircle2 className="w-5 h-5 text-[#9fc193]" />
-                      ) : (
-                        <Circle className="w-5 h-5" />
-                      )}
-                    </button>
+              {filteredTasks.map((task) => {
+                const { notes, checklist } = parseTaskDescription(task.description);
+                const isExpanded = expandedTaskChecklists[task.id];
+                const completedChecklistCount = checklist.filter((c) => c.completed).length;
 
-                    <div className="min-w-0 space-y-0.5">
-                      <p
-                        className={`text-sm font-medium leading-snug truncate ${
-                          task.is_done
-                            ? "line-through text-[#6e6375]"
-                            : "text-[#f4eff5]"
-                        }`}
-                      >
-                        {task.title}
-                      </p>
-                      {task.event && (
-                        <p className="text-xs text-[#968a9c] truncate">
-                          {task.event.title}
-                          {task.event.client ? ` • ${task.event.client.name}` : ""}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                return (
+                  <div
+                    key={task.id}
+                    className={`rounded-2xl border p-4 transition-all shadow-sm ${
+                      task.is_done
+                        ? "border-[#231c29] bg-[#120e15] opacity-65"
+                        : "border-[#33293c] bg-[#120e15] hover:border-[#33293c] hover:bg-[#1a151f]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                        <button
+                          onClick={() => handleToggleTask(task.id, task.is_done)}
+                          type="button"
+                          className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
+                          title={task.is_done ? "Desmarcar conclusão" : "Concluir tarefa"}
+                        >
+                          {task.is_done ? (
+                            <CheckCircle2 className="w-5 h-5 text-[#9fc193]" />
+                          ) : (
+                            <Circle className="w-5 h-5" />
+                          )}
+                        </button>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    {task.due_date && (
-                      <span className="text-xs text-[#968a9c] tabular-nums hidden sm:inline">
-                        Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
-                      </span>
-                    )}
-
-                    <div className="relative">
-                      <button
-                        onClick={() =>
-                          setActiveMenuId(activeMenuId === task.id ? null : task.id)
-                        }
-                        className="p-1 rounded text-[#6e6375] hover:text-[#f4eff5] transition-colors"
-                      >
-                        <MoreVertical className="w-3.5 h-3.5" />
-                      </button>
-
-                      {activeMenuId === task.id && (
-                        <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
-                          <button
-                            onClick={() => {
-                              setEditingTask(task);
-                              setIsTaskModalOpen(true);
-                              setActiveMenuId(null);
-                            }}
-                            className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#968a9c] hover:bg-[#231c29] hover:text-[#f4eff5] transition-colors"
-                          >
-                            <Pencil className="w-3 h-3" />
-                            <span>Editar</span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setActiveMenuId(null);
-                              setDeletingTask({ id: task.id, title: task.title });
-                            }}
-                            className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Excluir</span>
-                          </button>
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p
+                              className={`text-sm font-medium leading-snug truncate ${
+                                task.is_done
+                                  ? "line-through text-[#6e6375]"
+                                  : "text-[#f4eff5]"
+                              }`}
+                            >
+                              {task.title}
+                            </p>
+                            {checklist.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => toggleChecklistExpand(task.id)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#231c29] border border-[#33293c] text-[#bba0c1] hover:border-[#9873a1]/40 transition-colors"
+                              >
+                                <ListChecks className="w-3 h-3 text-[#9873a1]" />
+                                <span>
+                                  {completedChecklistCount}/{checklist.length} etapas
+                                </span>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-2.5 h-2.5 text-[#6e6375]" />
+                                ) : (
+                                  <ChevronDown className="w-2.5 h-2.5 text-[#6e6375]" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                          {task.event && (
+                            <p className="text-xs text-[#968a9c] truncate">
+                              {task.event.title}
+                              {task.event.client ? ` • ${task.event.client.name}` : ""}
+                            </p>
+                          )}
                         </div>
-                      )}
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {task.due_date && (
+                          <span className="text-xs text-[#968a9c] tabular-nums hidden sm:inline">
+                            Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
+                          </span>
+                        )}
+
+                        <div className="relative">
+                          <button
+                            onClick={() =>
+                              setActiveMenuId(activeMenuId === task.id ? null : task.id)
+                            }
+                            className="p-1 rounded text-[#6e6375] hover:text-[#f4eff5] transition-colors"
+                          >
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </button>
+
+                          {activeMenuId === task.id && (
+                            <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
+                              <button
+                                onClick={() => {
+                                  setEditingTask(task);
+                                  setIsTaskModalOpen(true);
+                                  setActiveMenuId(null);
+                                }}
+                                className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#968a9c] hover:bg-[#231c29] hover:text-[#f4eff5] transition-colors"
+                              >
+                                <Pencil className="w-3 h-3" />
+                                <span>Editar</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  setDeletingTask({ id: task.id, title: task.title });
+                                }}
+                                className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                <span>Excluir</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Expandable Checklist Sub-items */}
+                    {checklist.length > 0 && isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-[#33293c]/60 pl-8 space-y-1.5 animate-in fade-in duration-150">
+                        <div className="w-full bg-[#1a151f] h-1 rounded-full overflow-hidden border border-[#33293c]/50 mb-2">
+                          <div
+                            className="bg-gradient-to-r from-[#9873a1] to-[#9fc193] h-full transition-all duration-300 rounded-full"
+                            style={{
+                              width: `${(completedChecklistCount / checklist.length) * 100}%`,
+                            }}
+                          />
+                        </div>
+                        {checklist.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between gap-2 py-1 px-2 rounded-lg hover:bg-[#1a151f] transition-colors"
+                          >
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleToggleChecklistItem(task.id, item.id, item.completed)
+                              }
+                              className="flex items-center gap-2 text-xs flex-1 text-left min-w-0"
+                            >
+                              {item.completed ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-[#9fc193] shrink-0" />
+                              ) : (
+                                <Circle className="w-3.5 h-3.5 text-[#6e6375] shrink-0" />
+                              )}
+                              <span
+                                className={`truncate ${
+                                  item.completed ? "line-through text-[#6e6375]" : "text-[#f4eff5]"
+                                }`}
+                              >
+                                {item.text}
+                              </span>
+                            </button>
+                          </div>
+                        ))}
+                        {notes && (
+                          <p className="text-[11px] text-[#968a9c] italic pt-1 pl-1">
+                            Nota: {notes}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

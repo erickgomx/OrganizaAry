@@ -17,6 +17,7 @@ import {
   Film,
   Flame,
   ChevronDown,
+  ListChecks,
 } from "lucide-react";
 import {
   TaskWithDetails,
@@ -26,6 +27,7 @@ import {
 } from "@/actions/tasks";
 import { TaskPriority, TaskStatus } from "@/types/database";
 import { TaskModal } from "./TaskModal";
+import { parseTaskDescription } from "@/lib/checklist";
 
 interface SimpleEventOption {
   id: string;
@@ -293,7 +295,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                 )}
                               </button>
 
-                              <div>
+                              <div className="flex-1 min-w-0">
                                 <h4
                                   className={`text-xs font-medium leading-snug ${
                                     task.is_done
@@ -304,11 +306,41 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                   {task.title}
                                 </h4>
 
-                                {task.description && (
-                                  <p className="text-[11px] text-[#968a9c] mt-1 line-clamp-2 leading-relaxed">
-                                    {task.description}
-                                  </p>
-                                )}
+                                {(() => {
+                                  const { notes, checklist } = parseTaskDescription(task.description);
+                                  const completedChecklistCount = checklist.filter((c) => c.completed).length;
+
+                                  return (
+                                    <>
+                                      {checklist.length > 0 && (
+                                        <div className="space-y-1 mt-1.5">
+                                          <div className="flex items-center justify-between text-[10px] text-[#968a9c]">
+                                            <span className="flex items-center gap-1 font-medium text-[#bba0c1]">
+                                              <ListChecks className="w-3 h-3 text-[#9873a1]" />
+                                              {completedChecklistCount}/{checklist.length} etapas
+                                            </span>
+                                            <span className="tabular-nums">
+                                              {Math.round((completedChecklistCount / checklist.length) * 100)}%
+                                            </span>
+                                          </div>
+                                          <div className="w-full bg-[#120e15] h-1 rounded-full overflow-hidden border border-[#33293c]/50">
+                                            <div
+                                              className="bg-gradient-to-r from-[#9873a1] to-[#9fc193] h-full transition-all duration-300"
+                                              style={{
+                                                width: `${(completedChecklistCount / checklist.length) * 100}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                      {notes && (
+                                        <p className="text-[11px] text-[#968a9c] mt-1 line-clamp-2 leading-relaxed">
+                                          {notes}
+                                        </p>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
 

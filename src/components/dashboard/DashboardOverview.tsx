@@ -13,13 +13,14 @@ import {
   ArrowRight,
   CheckSquare,
   Trash2,
+  ListChecks,
 } from "lucide-react";
-import { sanitizeExternalUrl } from "@/lib/utils";
 import { EventWithClientInfo, deleteEventAction } from "@/actions/events";
 import { TaskWithDetails, toggleTaskDoneAction, deleteTaskAction } from "@/actions/tasks";
 import { EventModal } from "@/components/events/EventModal";
 import { TaskModal } from "@/components/tasks/TaskModal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { parseTaskDescription } from "@/lib/checklist";
 
 interface DashboardOverviewProps {
   events: EventWithClientInfo[];
@@ -290,35 +291,47 @@ export function DashboardOverview({
             </div>
           ) : (
             <div className="space-y-2">
-              {pendingTasks.slice(0, 6).map((task) => (
-                <div
-                  key={task.id}
-                  className="rounded-xl border border-[#33293c] bg-[#120e15] p-3.5 flex items-center justify-between gap-3 hover:border-[#33293c] hover:bg-[#1a151f] transition-all shadow-sm"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <button
-                      onClick={() => handleToggleTask(task.id, task.is_done)}
-                      type="button"
-                      className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
-                      title="Marcar como entregue / concluído"
-                    >
-                      {task.is_done ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#9fc193]" />
-                      ) : (
-                        <Circle className="w-4 h-4" />
-                      )}
-                    </button>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-[#f4eff5] truncate">
-                        {task.title}
-                      </p>
-                      {task.event && (
-                        <p className="text-[10px] text-[#968a9c] truncate mt-0.5">
-                          {task.event.title}
-                        </p>
-                      )}
+              {pendingTasks.slice(0, 6).map((task) => {
+                const { checklist } = parseTaskDescription(task.description);
+                const completedChecklistCount = checklist.filter((c) => c.completed).length;
+
+                return (
+                  <div
+                    key={task.id}
+                    className="rounded-xl border border-[#33293c] bg-[#120e15] p-3.5 flex items-center justify-between gap-3 hover:border-[#33293c] hover:bg-[#1a151f] transition-all shadow-sm"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <button
+                        onClick={() => handleToggleTask(task.id, task.is_done)}
+                        type="button"
+                        className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
+                        title="Marcar como entregue / concluído"
+                      >
+                        {task.is_done ? (
+                          <CheckCircle2 className="w-4 h-4 text-[#9fc193]" />
+                        ) : (
+                          <Circle className="w-4 h-4" />
+                        )}
+                      </button>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-medium text-[#f4eff5] truncate">
+                            {task.title}
+                          </p>
+                          {checklist.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-semibold text-[#bba0c1] bg-[#231c29] px-1.5 py-0.2 rounded border border-[#33293c] shrink-0">
+                              <ListChecks className="w-2.5 h-2.5 text-[#9873a1]" />
+                              {completedChecklistCount}/{checklist.length}
+                            </span>
+                          )}
+                        </div>
+                        {task.event && (
+                          <p className="text-[10px] text-[#968a9c] truncate mt-0.5">
+                            {task.event.title}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
                   <div className="flex items-center gap-2 shrink-0">
                     {task.due_date && (
@@ -336,8 +349,9 @@ export function DashboardOverview({
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
           )}
         </div>
       </div>

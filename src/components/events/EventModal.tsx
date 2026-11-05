@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { X, Loader2, Calendar, MapPin, DollarSign, User, FileText, CheckCircle, Trash2, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Loader2, Calendar, MapPin, User, FileText, CheckCircle, Trash2, ChevronDown } from "lucide-react";
 import { createEventAction, updateEventAction, deleteEventAction, EventInput, EventWithClientInfo } from "@/actions/events";
 import { EventStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { handleFormKeyDownEnterToNextField, formatCurrencyInput, parseCurrencyInput } from "@/lib/utils";
 
 interface SimpleClientOption {
   id: string;
@@ -55,9 +56,92 @@ export function EventModal({
     date: getInitialDateTime(),
     location: event?.location || "",
     status: event?.status || "budget_lead",
-    price: event?.price !== undefined ? Number(event.price) : 1500,
+    price: event?.price !== undefined ? Number(event.price) : 0,
     notes: event?.notes || "",
   });
+
+  const [displayPrice, setDisplayPrice] = useState<string>(() => {
+    if (event?.price !== undefined && event?.price !== null) {
+      const num = Number(event.price);
+      return num > 0
+        ? new Intl.NumberFormat("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(num)
+        : "";
+    }
+    return "";
+  });
+
+  const currentKey = isOpen
+    ? `${event?.id || "new"}-${event?.date || ""}-${event?.price || 0}-${defaultClientId || ""}`
+    : "closed";
+  const [prevKey, setPrevKey] = useState<string>(currentKey);
+
+  // Sincroniza o formulário e a máscara de valor sempre que o modal abre ou o evento altera
+  if (prevKey !== currentKey) {
+    setPrevKey(currentKey);
+    if (isOpen) {
+      if (event) {
+        const num = Number(event.price) || 0;
+        setFormData({
+          title: event.title || "",
+          clientId: event.client_id || defaultClientId || (clients[0]?.id || ""),
+          date: event.date || getInitialDateTime(),
+          location: event.location || "",
+          status: event.status || "budget_lead",
+          price: num,
+          notes: event.notes || "",
+        });
+        setDisplayPrice(
+          num > 0
+            ? new Intl.NumberFormat("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }).format(num)
+            : ""
+        );
+      } else {
+        setFormData({
+          title: "",
+          clientId: defaultClientId || (clients[0]?.id || ""),
+          date: getInitialDateTime(),
+          location: "",
+          status: "budget_lead",
+          price: 0,
+          notes: "",
+        });
+        setDisplayPrice("");
+      }
+    }
+  }
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const formatted = formatCurrencyInput(raw);
+    setDisplayPrice(formatted);
+    const parsed = parseCurrencyInput(formatted);
+    setFormData((prev) => ({ ...prev, price: parsed }));
+  };
+
+  const handlePriceBlur = () => {
+    if (!displayPrice) return;
+    const num = parseCurrencyInput(displayPrice);
+    if (num > 0) {
+      setDisplayPrice(
+        new Intl.NumberFormat("pt-BR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(num)
+      );
+    } else if (num === 0) {
+      setDisplayPrice("0,00");
+    }
+  };
+
+  const handlePriceFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,18 +197,19 @@ export function EventModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} onKeyDown={handleFormKeyDownEnterToNextField} className="flex flex-col gap-4">
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+            <label htmlFor="event-client" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
               Cliente Vinculado *
             </label>
             <div className="relative flex items-center">
               <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <select
+                id="event-client"
                 required
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full min-h-[42px] appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10 pr-10 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
                 {clients.length === 0 ? (
                   <option value="" className="bg-[#1a151f] text-[#f4eff5]">Nenhum cliente cadastrado ainda</option>
@@ -136,87 +221,93 @@ export function EventModal({
                   ))
                 )}
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+            <label htmlFor="event-title" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
               Título da Captação / Projeto *
             </label>
             <input
+              id="event-title"
               type="text"
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Ensaio Gestante, Casamento Itally & Erick"
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+              className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3.5 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+              <label htmlFor="event-date" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
                 Data e Horário *
               </label>
               <div className="relative">
                 <input
+                  id="event-date"
                   type="datetime-local"
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
+                  className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3.5 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
-                Valor Cobrado (R$)
+              <label htmlFor="event-price" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
+                Valor Cobrado
               </label>
               <div className="relative flex items-center">
-                <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#9873a1] pointer-events-none select-none">
+                  R$
+                </span>
                 <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.price !== undefined ? formData.price : ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })
-                  }
-                  placeholder="0.00"
-                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors tabular-nums"
+                  id="event-price"
+                  type="text"
+                  inputMode="decimal"
+                  value={displayPrice}
+                  onChange={handlePriceChange}
+                  onBlur={handlePriceBlur}
+                  onFocus={handlePriceFocus}
+                  placeholder="0,00"
+                  className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10 pr-3.5 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors tabular-nums"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+            <label htmlFor="event-location" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
               Localização / Set
             </label>
             <div className="relative flex items-center">
               <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <input
+                id="event-location"
                 type="text"
                 value={formData.location || ""}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Ex: Praia da Joaquina, Estúdio Central"
-                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10 pr-3.5 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+            <label htmlFor="event-status" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
               Fase da Máquina de Estados (Status)
             </label>
             <div className="relative flex items-center">
               <CheckCircle className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
               <select
+                id="event-status"
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
-                className="w-full appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10.5 pr-9 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
+                className="w-full min-h-[42px] appearance-none rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10 pr-10 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
                 <option value="budget_lead" className="bg-[#1a151f] text-[#f4eff5]">1. Orçamento / Proposta</option>
                 <option value="scheduled" className="bg-[#1a151f] text-[#f4eff5]">2. Agendado (Fechado)</option>
@@ -224,21 +315,22 @@ export function EventModal({
                 <option value="post_production" className="bg-[#1a151f] text-[#f4eff5]">4. Pós-Produção</option>
                 <option value="finished" className="bg-[#1a151f] text-[#f4eff5]">5. Finalizado</option>
               </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
             </div>
           </div>
 
           <div>
-            <label className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
+            <label htmlFor="event-notes" className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
               <FileText className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
               <span>Briefing / Observações</span>
             </label>
             <textarea
+              id="event-notes"
               rows={2}
               value={formData.notes || ""}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
               placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
+              className="w-full min-h-[75px] rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
             />
           </div>
 

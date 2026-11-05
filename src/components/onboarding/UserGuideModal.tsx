@@ -14,7 +14,6 @@ import {
   BookOpen,
   Cloud,
   Lightbulb,
-  Video,
   ArrowRight,
   Check,
 } from "lucide-react";

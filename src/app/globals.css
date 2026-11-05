@@ -95,7 +95,15 @@ p {
   select,
   textarea {
     font-size: 16px !important;
+    line-height: 1.5 !important;
   }
+}
+
+/* Ensure clean input and select containment */
+input,
+select,
+textarea {
+  box-sizing: border-box;
 }
 
 /* Prevent double-tap zoom delay and unwanted zoom gestures on touch targets */

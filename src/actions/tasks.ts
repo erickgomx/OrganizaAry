@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Task, TaskPriority, TaskStatus, Database } from "@/types/database";
+import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 
 export type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
 
@@ -284,4 +285,54 @@ export async function deleteTaskAction(id: string) {
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   return { success: true };
+}
+
+export async function toggleTaskChecklistItemAction(
+  taskId: string,
+  itemId: string,
+  completed: boolean
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Não autenticado." };
+  }
+
+  const { data: task, error: fetchError } = await supabase
+    .from("tasks")
+    .select("id, description")
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (fetchError || !task) {
+    return { error: "Tarefa não encontrada." };
+  }
+
+  const { notes, checklist } = parseTaskDescription(task.description);
+  const updatedChecklist = checklist.map((item) =>
+    item.id === itemId ? { ...item, completed } : item
+  );
+
+  const newDescription = serializeTaskDescription(notes, updatedChecklist);
+
+  const { data, error } = await supabase
+    .from("tasks")
+    .update({ description: newDescription })
+    .eq("id", taskId)
+    .eq("user_id", user.id)
+    .select("*, event:events(id, title, client:clients(id, name))")
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/tasks");
+  revalidatePath("/dashboard");
+  revalidatePath("/events");
+  return { data: data as unknown as TaskWithDetails };
 }
