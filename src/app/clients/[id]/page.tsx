@@ -36,11 +36,21 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
     notFound();
   }
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, email, full_name, avatar_url, google_refresh_token")
     .eq("id", user.id)
     .single();
+
+  const profile = rawProfile
+    ? {
+        id: rawProfile.id,
+        email: rawProfile.email,
+        full_name: rawProfile.full_name,
+        avatar_url: rawProfile.avatar_url,
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] pb-20 md:pb-12 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">

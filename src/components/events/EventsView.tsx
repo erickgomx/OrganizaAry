@@ -32,6 +32,8 @@ import {
 import { EventStatus } from "@/types/database";
 import { EventModal } from "./EventModal";
 import { TaskModal } from "@/components/tasks/TaskModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { sanitizeExternalUrl } from "@/lib/utils";
 
 interface EventsViewProps {
   initialEvents: EventWithClientInfo[];
@@ -53,6 +55,10 @@ export function EventsView({
   const [editingEvent, setEditingEvent] = useState<EventWithClientInfo | null>(null);
   const [editingTask, setEditingTask] = useState<TaskWithDetails | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [deletingEvent, setDeletingEvent] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [deletingTask, setDeletingTask] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
 
   // Status Machine
   const statusMachine: {
@@ -127,10 +133,16 @@ export function EventsView({
     }
   };
 
-  const handleDeleteEvent = async (id: string, title: string) => {
-    if (confirm(`Deseja remover o ensaio "${title}"?`)) {
-      setEvents((prev) => prev.filter((ev) => ev.id !== id));
-      await deleteEventAction(id);
+  const handleConfirmDeleteEvent = async () => {
+    if (!deletingEvent) return;
+    setIsDeletingEvent(true);
+    const res = await deleteEventAction(deletingEvent.id);
+    setIsDeletingEvent(false);
+    if (res.success) {
+      setEvents((prev) => prev.filter((ev) => ev.id !== deletingEvent.id));
+      setDeletingEvent(null);
+    } else {
+      alert("Erro ao excluir ensaio: " + res.error);
     }
   };
 
@@ -150,10 +162,16 @@ export function EventsView({
     }
   };
 
-  const handleDeleteTask = async (id: string, title: string) => {
-    if (confirm(`Deseja remover a tarefa "${title}"?`)) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-      await deleteTaskAction(id);
+  const handleConfirmDeleteTask = async () => {
+    if (!deletingTask) return;
+    setIsDeletingTask(true);
+    const res = await deleteTaskAction(deletingTask.id);
+    setIsDeletingTask(false);
+    if (res.success) {
+      setTasks((prev) => prev.filter((t) => t.id !== deletingTask.id));
+      setDeletingTask(null);
+    } else {
+      alert("Erro ao excluir tarefa: " + res.error);
     }
   };
 
@@ -368,7 +386,7 @@ export function EventsView({
                             <button
                               onClick={() => {
                                 setActiveMenuId(null);
-                                handleDeleteEvent(ev.id, ev.title);
+                                setDeletingEvent({ id: ev.id, title: ev.title });
                               }}
                               className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
                             >
@@ -419,9 +437,9 @@ export function EventsView({
 
                       {/* Subtle Google Links (Only when ready) */}
                       <div className="flex items-center gap-2">
-                        {ev.drive_folder_url && (
+                        {sanitizeExternalUrl(ev.drive_folder_url) && (
                           <a
-                            href={ev.drive_folder_url}
+                            href={sanitizeExternalUrl(ev.drive_folder_url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a1917] text-[#d4a359] border border-[#26231f] hover:border-[#d4a359]/30 text-[11px] transition-colors"
@@ -431,9 +449,9 @@ export function EventsView({
                             <span>Pasta RAWs/Entregas</span>
                           </a>
                         )}
-                        {ev.meet_link && (
+                        {sanitizeExternalUrl(ev.meet_link) && (
                           <a
-                            href={ev.meet_link}
+                            href={sanitizeExternalUrl(ev.meet_link)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a1917] text-[#94a3b8] border border-[#26231f] hover:border-[#94a3b8]/30 text-[11px] transition-colors"
@@ -549,7 +567,7 @@ export function EventsView({
                           <button
                             onClick={() => {
                               setActiveMenuId(null);
-                              handleDeleteTask(task.id, task.title);
+                              setDeletingTask({ id: task.id, title: task.title });
                             }}
                             className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
                           >
@@ -592,6 +610,28 @@ export function EventsView({
           clientName: e.client?.name,
         }))}
         onSuccess={() => window.location.reload()}
+      />
+
+      {/* Confirm Delete Event Modal */}
+      <ConfirmModal
+        isOpen={!!deletingEvent}
+        onClose={() => setDeletingEvent(null)}
+        isLoading={isDeletingEvent}
+        title="Remover Captação"
+        description={`Tem certeza que deseja remover o ensaio "${deletingEvent?.title}"? Todas as tarefas de edição vinculadas a este trabalho também serão excluídas.`}
+        confirmLabel="Sim, Remover"
+        onConfirm={handleConfirmDeleteEvent}
+      />
+
+      {/* Confirm Delete Task Modal */}
+      <ConfirmModal
+        isOpen={!!deletingTask}
+        onClose={() => setDeletingTask(null)}
+        isLoading={isDeletingTask}
+        title="Remover Tarefa"
+        description={`Tem certeza que deseja excluir a tarefa "${deletingTask?.title}"?`}
+        confirmLabel="Sim, Remover"
+        onConfirm={handleConfirmDeleteTask}
       />
     </div>
   );

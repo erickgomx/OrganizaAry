@@ -2,23 +2,27 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Calendar,
-  DollarSign,
   Phone,
   Mail,
   FileText,
   MessageCircle,
   Pencil,
+  Trash2,
   Plus,
   Clock,
   MapPin,
   Film,
 } from "lucide-react";
 import { Client, Event, EventStatus } from "@/types/database";
+import { deleteClientAction } from "@/actions/clients";
+import { deleteEventAction } from "@/actions/events";
 import { ClientModal } from "./ClientModal";
 import { EventModal } from "@/components/events/EventModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ClientProfileViewProps {
   client: Client;
@@ -31,9 +35,15 @@ interface ClientProfileViewProps {
   };
 }
 
-export function ClientProfileView({ client, events, stats }: ClientProfileViewProps) {
+export function ClientProfileView({ client, events: initialEvents, stats }: ClientProfileViewProps) {
+  const router = useRouter();
+  const [events, setEvents] = useState<Event[]>(initialEvents);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
   const [isNewEventOpen, setIsNewEventOpen] = useState(false);
+  const [isDeleteClientModalOpen, setIsDeleteClientModalOpen] = useState(false);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
 
   const formatBRL = (val: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -146,6 +156,16 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
               <Pencil className="w-3.5 h-3.5" />
               <span>Editar</span>
             </button>
+
+            <button
+              onClick={() => setIsDeleteClientModalOpen(true)}
+              type="button"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#211615] hover:bg-[#2b1b1a] text-[#d48970] border border-[#3d2320] transition-colors text-xs font-medium"
+              title="Remover cliente"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Remover</span>
+            </button>
           </div>
         </div>
 
@@ -254,7 +274,7 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-2 sm:pt-0 border-[#23201c]">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-[#23201c]">
                     <span className="text-xs sm:text-sm font-semibold text-[#dfba88] tabular-nums sm:text-right">
                       {formatBRL(Number(ev.price))}
                     </span>
@@ -264,6 +284,14 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
                     >
                       Ver no Pipeline &rarr;
                     </Link>
+                    <button
+                      onClick={() => setDeletingEvent({ id: ev.id, title: ev.title })}
+                      type="button"
+                      className="p-1.5 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                      title="Remover captação"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -287,6 +315,48 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
         defaultClientId={client.id}
         clients={[{ id: client.id, name: client.name }]}
         onSuccess={() => window.location.reload()}
+      />
+
+      {/* Confirm Delete Client Modal */}
+      <ConfirmModal
+        isOpen={isDeleteClientModalOpen}
+        onClose={() => setIsDeleteClientModalOpen(false)}
+        isLoading={isDeletingClient}
+        title="Remover Cliente"
+        description={`Tem certeza que deseja remover o cliente "${client.name}"? Todas as captações, reuniões e tarefas vinculadas a ele também serão excluídas.`}
+        confirmLabel="Sim, Remover Cliente"
+        onConfirm={async () => {
+          setIsDeletingClient(true);
+          const res = await deleteClientAction(client.id);
+          setIsDeletingClient(false);
+          if (res.success) {
+            router.push("/clients");
+          } else {
+            alert("Erro ao excluir cliente: " + res.error);
+          }
+        }}
+      />
+
+      {/* Confirm Delete Event Modal */}
+      <ConfirmModal
+        isOpen={!!deletingEvent}
+        onClose={() => setDeletingEvent(null)}
+        isLoading={isDeletingEvent}
+        title="Remover Captação"
+        description={`Tem certeza que deseja remover "${deletingEvent?.title}"? As tarefas vinculadas a este projeto também serão excluídas.`}
+        confirmLabel="Sim, Remover"
+        onConfirm={async () => {
+          if (!deletingEvent) return;
+          setIsDeletingEvent(true);
+          const res = await deleteEventAction(deletingEvent.id);
+          setIsDeletingEvent(false);
+          if (res.success) {
+            setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
+            setDeletingEvent(null);
+          } else {
+            alert("Erro ao excluir captação: " + res.error);
+          }
+        }}
       />
     </div>
   );

@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignOutButton() {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSignOut = async () => {
     try {
       setLoading(true);
       const supabase = createClient();
       await supabase.auth.signOut();
-      window.location.href = "/login";
+      router.push("/login");
+      router.refresh();
     } catch (error) {
       console.error("Erro ao sair:", error);
       setLoading(false);

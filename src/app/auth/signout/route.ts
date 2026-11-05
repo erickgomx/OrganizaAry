@@ -14,10 +14,7 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const { origin } = new URL(request.url);
-  const supabase = await createClient();
-
-  await supabase.auth.signOut();
-
+  // GET requests do not invalidate the session to prevent Logout CSRF attacks
   return NextResponse.redirect(`${origin}/login`, {
     status: 302,
   });

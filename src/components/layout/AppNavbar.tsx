@@ -4,18 +4,27 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, KanbanSquare, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen } from "lucide-react";
 import { SignOutButton } from "./SignOutButton";
-import { Profile } from "@/types/database";
 import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
 
+export interface SafeNavbarProfile {
+  id?: string;
+  email?: string | null;
+  full_name?: string | null;
+  avatar_url?: string | null;
+  google_refresh_token?: string | null;
+  hasGoogleSync?: boolean;
+}
+
 interface AppNavbarProps {
-  profile: Profile | null;
+  profile: SafeNavbarProfile | null;
 }
 
 export function AppNavbar({ profile }: AppNavbarProps) {
   const pathname = usePathname();
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const isGoogleConnected = profile?.hasGoogleSync ?? Boolean(profile?.google_refresh_token);
 
   // Check on initial load if the tutorial has been seen, otherwise open smoothly
   useEffect(() => {
@@ -92,7 +101,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
               <span className="hidden sm:inline">Guia de Uso</span>
             </button>
 
-            {profile?.google_refresh_token ? (
+            {isGoogleConnected ? (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#162017] border border-[#273829] text-[#9fc193]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#82af74]" />
                 Google Sincronizado
@@ -105,9 +114,12 @@ export function AppNavbar({ profile }: AppNavbarProps) {
 
             <div className="flex items-center gap-2">
               {profile?.avatar_url ? (
-                <img
+                <Image
                   src={profile.avatar_url}
                   alt={profile.full_name || "Avatar"}
+                  width={28}
+                  height={28}
+                  unoptimized
                   className="w-7 h-7 rounded-full border border-[#332e27] object-cover"
                 />
               ) : (

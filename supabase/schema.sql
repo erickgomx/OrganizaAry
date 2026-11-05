@@ -253,14 +253,26 @@ drop policy if exists "Users can insert own events" on public.events;
 create policy "Users can insert own events"
 on public.events for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and exists (
+    select 1 from public.clients
+    where id = client_id and user_id = auth.uid()
+  )
+);
 
 drop policy if exists "Users can update own events" on public.events;
 create policy "Users can update own events"
 on public.events for update
 to authenticated
 using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and exists (
+    select 1 from public.clients
+    where id = client_id and user_id = auth.uid()
+  )
+);
 
 drop policy if exists "Users can delete own events" on public.events;
 create policy "Users can delete own events"
@@ -279,14 +291,32 @@ drop policy if exists "Users can insert own tasks" on public.tasks;
 create policy "Users can insert own tasks"
 on public.tasks for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and (
+    event_id is null
+    or exists (
+      select 1 from public.events
+      where id = event_id and user_id = auth.uid()
+    )
+  )
+);
 
 drop policy if exists "Users can update own tasks" on public.tasks;
 create policy "Users can update own tasks"
 on public.tasks for update
 to authenticated
 using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+with check (
+  auth.uid() = user_id
+  and (
+    event_id is null
+    or exists (
+      select 1 from public.events
+      where id = event_id and user_id = auth.uid()
+    )
+  )
+);
 
 drop policy if exists "Users can delete own tasks" on public.tasks;
 create policy "Users can delete own tasks"

@@ -74,6 +74,20 @@ export async function createTaskAction(input: TaskInput) {
   const status = input.status || "todo";
   const isDone = status === "done";
 
+  // Validação BOLA/IDOR: Garantir que a captação vinculada pertence ao usuário autenticado
+  if (input.eventId) {
+    const { data: eventOwnerCheck, error: eventOwnerError } = await supabase
+      .from("events")
+      .select("id")
+      .eq("id", input.eventId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (eventOwnerError || !eventOwnerCheck) {
+      return { error: "Captação vinculada não encontrada ou inválida." };
+    }
+  }
+
   const { data, error } = await supabase
     .from("tasks")
     .insert({
@@ -112,7 +126,21 @@ export async function updateTaskAction(id: string, input: Partial<TaskInput>) {
 
   if (input.title !== undefined) payload.title = input.title.trim();
   if (input.description !== undefined) payload.description = input.description?.trim() || null;
-  if (input.eventId !== undefined) payload.event_id = input.eventId || null;
+  if (input.eventId !== undefined) {
+    if (input.eventId) {
+      const { data: eventOwnerCheck, error: eventOwnerError } = await supabase
+        .from("events")
+        .select("id")
+        .eq("id", input.eventId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (eventOwnerError || !eventOwnerCheck) {
+        return { error: "Captação vinculada não encontrada ou inválida." };
+      }
+    }
+    payload.event_id = input.eventId || null;
+  }
   if (input.priority !== undefined) payload.priority = input.priority;
   if (input.status !== undefined) {
     payload.status = input.status;

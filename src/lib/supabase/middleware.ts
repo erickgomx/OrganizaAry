@@ -42,11 +42,11 @@ export async function updateSession(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname;
     const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+    const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|map)$/i.test(pathname);
     const isPublicAsset =
       pathname.startsWith("/_next") ||
-      pathname.startsWith("/api") ||
       pathname === "/favicon.ico" ||
-      pathname.includes(".");
+      isStaticFile;
 
     // If user is not authenticated and trying to access a protected app route
     if (!user && !isAuthRoute && !isPublicAsset) {
@@ -63,6 +63,12 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   } catch (error) {
     console.error("Middleware safe fallback:", error);
+    const pathname = request.nextUrl.pathname;
+    const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+    if (!isAuthRoute) {
+      const loginUrl = new URL("/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
     return supabaseResponse;
   }
 }

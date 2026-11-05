@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, User, Phone, Mail, FileText } from "lucide-react";
-import { createClientAction, updateClientAction, ClientInput } from "@/actions/clients";
+import { X, Loader2, User, Phone, Mail, FileText, Trash2 } from "lucide-react";
+import { createClientAction, updateClientAction, deleteClientAction, ClientInput } from "@/actions/clients";
 import { Client } from "@/types/database";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -24,6 +25,8 @@ export function ClientModal({ isOpen, onClose, client, onSuccess }: ClientModalP
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -140,25 +143,66 @@ export function ClientModal({ isOpen, onClose, client, onSuccess }: ClientModalP
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#23201c]">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-3 py-1.5 rounded-xl border border-[#26231f] bg-[#181715] text-[#8e887f] hover:text-[#f6f4ef] text-xs font-medium transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            >
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isEditing ? "Salvar Alterações" : "Cadastrar Cliente"}</span>
-            </button>
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#23201c]">
+            {isEditing && client ? (
+              <button
+                type="button"
+                onClick={() => setIsConfirmDeleteOpen(true)}
+                disabled={loading || isDeleting}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[#d48970] hover:bg-[#211615] text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Excluir</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading || isDeleting}
+                className="px-3 py-1.5 rounded-xl border border-[#26231f] bg-[#181715] text-[#8e887f] hover:text-[#f6f4ef] text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading || isDeleting}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+              >
+                {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{isEditing ? "Salvar Alterações" : "Cadastrar Cliente"}</span>
+              </button>
+            </div>
           </div>
         </form>
+
+        {/* Delete Confirmation */}
+        {client && (
+          <ConfirmModal
+            isOpen={isConfirmDeleteOpen}
+            onClose={() => setIsConfirmDeleteOpen(false)}
+            isLoading={isDeleting}
+            title="Remover Cliente"
+            description={`Tem certeza que deseja remover o cliente "${client.name}"? Todas as captações e tarefas vinculadas serão excluídas.`}
+            confirmLabel="Sim, Remover"
+            onConfirm={async () => {
+              setIsDeleting(true);
+              const res = await deleteClientAction(client.id);
+              setIsDeleting(false);
+              if (res.success) {
+                setIsConfirmDeleteOpen(false);
+                onSuccess?.();
+                onClose();
+              } else {
+                setError(res.error || "Erro ao excluir cliente.");
+                setIsConfirmDeleteOpen(false);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -20,11 +20,21 @@ export default async function ClientsPage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, email, full_name, avatar_url, google_refresh_token")
     .eq("id", user.id)
     .single();
+
+  const profile = rawProfile
+    ? {
+        id: rawProfile.id,
+        email: rawProfile.email,
+        full_name: rawProfile.full_name,
+        avatar_url: rawProfile.avatar_url,
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+      }
+    : null;
 
   const clients = await getClients();
 

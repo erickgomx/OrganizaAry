@@ -12,13 +12,15 @@ import {
   CheckCircle2,
   Circle,
   ArrowRight,
-  Video,
   CheckSquare,
+  Trash2,
 } from "lucide-react";
-import { EventWithClientInfo } from "@/actions/events";
-import { TaskWithDetails, toggleTaskDoneAction } from "@/actions/tasks";
+import { sanitizeExternalUrl } from "@/lib/utils";
+import { EventWithClientInfo, deleteEventAction } from "@/actions/events";
+import { TaskWithDetails, toggleTaskDoneAction, deleteTaskAction } from "@/actions/tasks";
 import { EventModal } from "@/components/events/EventModal";
 import { TaskModal } from "@/components/tasks/TaskModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface DashboardOverviewProps {
   events: EventWithClientInfo[];
@@ -28,19 +30,50 @@ interface DashboardOverviewProps {
 }
 
 export function DashboardOverview({
-  events,
+  events: initialEvents,
   tasks: initialTasks,
   clients,
   userName,
 }: DashboardOverviewProps) {
+  const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [deletingTask, setDeletingTask] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
 
   const pendingTasks = tasks.filter((t) => !t.is_done);
   const nextEvents = events
     .filter((e) => e.status !== "finished")
     .slice(0, 6);
+
+  const handleConfirmDeleteEvent = async () => {
+    if (!deletingEvent) return;
+    setIsDeletingEvent(true);
+    const res = await deleteEventAction(deletingEvent.id);
+    setIsDeletingEvent(false);
+    if (res.success) {
+      setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
+      setDeletingEvent(null);
+    } else {
+      alert("Erro ao excluir trabalho: " + res.error);
+    }
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!deletingTask) return;
+    setIsDeletingTask(true);
+    const res = await deleteTaskAction(deletingTask.id);
+    setIsDeletingTask(false);
+    if (res.success) {
+      setTasks((prev) => prev.filter((t) => t.id !== deletingTask.id));
+      setDeletingTask(null);
+    } else {
+      alert("Erro ao excluir tarefa: " + res.error);
+    }
+  };
 
   const handleToggleTask = async (taskId: string, currentIsDone: boolean) => {
     const nextIsDone = !currentIsDone;
@@ -176,9 +209,19 @@ export function DashboardOverview({
                         <h4 className="font-semibold text-sm text-[#f6f4ef] leading-snug truncate">
                           {ev.title}
                         </h4>
-                        <span className="text-xs font-semibold text-[#dfba88] tabular-nums shrink-0">
-                          {formatBRL(Number(ev.price))}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-xs font-semibold text-[#dfba88] tabular-nums">
+                            {formatBRL(Number(ev.price))}
+                          </span>
+                          <button
+                            onClick={() => setDeletingEvent({ id: ev.id, title: ev.title })}
+                            type="button"
+                            className="p-1 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                            title="Remover ensaio da agenda"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap text-xs text-[#8e887f]">
@@ -208,9 +251,9 @@ export function DashboardOverview({
                             {ev.location}
                           </span>
                         )}
-                        {ev.drive_folder_url && (
+                        {sanitizeExternalUrl(ev.drive_folder_url) && (
                           <a
-                            href={ev.drive_folder_url}
+                            href={sanitizeExternalUrl(ev.drive_folder_url)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[#d4a359] hover:underline"
@@ -290,11 +333,21 @@ export function DashboardOverview({
                     </div>
                   </div>
 
-                  {task.due_date && (
-                    <span className="text-[10px] text-[#8e887f] tabular-nums shrink-0">
-                      Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {task.due_date && (
+                      <span className="text-[10px] text-[#8e887f] tabular-nums">
+                        Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => setDeletingTask({ id: task.id, title: task.title })}
+                      type="button"
+                      className="p-1 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                      title="Remover tarefa"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -326,6 +379,28 @@ export function DashboardOverview({
           clientName: e.client?.name,
         }))}
         onSuccess={() => window.location.reload()}
+      />
+
+      {/* Confirm Delete Event Modal */}
+      <ConfirmModal
+        isOpen={!!deletingEvent}
+        onClose={() => setDeletingEvent(null)}
+        isLoading={isDeletingEvent}
+        title="Remover Captação da Agenda"
+        description={`Tem certeza que deseja remover "${deletingEvent?.title}"? Todas as tarefas vinculadas também serão excluídas.`}
+        confirmLabel="Sim, Remover"
+        onConfirm={handleConfirmDeleteEvent}
+      />
+
+      {/* Confirm Delete Task Modal */}
+      <ConfirmModal
+        isOpen={!!deletingTask}
+        onClose={() => setDeletingTask(null)}
+        isLoading={isDeletingTask}
+        title="Remover Tarefa"
+        description={`Tem certeza que deseja remover a tarefa "${deletingTask?.title}"?`}
+        confirmLabel="Sim, Remover"
+        onConfirm={handleConfirmDeleteTask}
       />
     </div>
   );

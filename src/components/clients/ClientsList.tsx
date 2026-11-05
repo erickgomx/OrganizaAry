@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   Search,
   UserPlus,
-  Phone,
-  Mail,
   MoreVertical,
   ChevronRight,
   MessageCircle,
@@ -16,6 +14,7 @@ import {
 } from "lucide-react";
 import { ClientWithStats, deleteClientAction } from "@/actions/clients";
 import { ClientModal } from "./ClientModal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface ClientsListProps {
   initialClients: ClientWithStats[];
@@ -27,6 +26,8 @@ export function ClientsList({ initialClients }: ClientsListProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientWithStats | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [deletingClient, setDeletingClient] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredClients = clients.filter((c) => {
     const term = searchTerm.toLowerCase();
@@ -42,14 +43,16 @@ export function ClientsList({ initialClients }: ClientsListProps) {
     return phone.replace(/\D/g, "");
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Tem certeza que deseja remover o cliente "${name}"? Todos os eventos atrelados serão apagados.`)) {
-      const res = await deleteClientAction(id);
-      if (res.success) {
-        setClients((prev) => prev.filter((c) => c.id !== id));
-      } else {
-        alert("Erro ao excluir cliente: " + res.error);
-      }
+  const handleConfirmDelete = async () => {
+    if (!deletingClient) return;
+    setIsDeleting(true);
+    const res = await deleteClientAction(deletingClient.id);
+    setIsDeleting(false);
+    if (res.success) {
+      setClients((prev) => prev.filter((c) => c.id !== deletingClient.id));
+      setDeletingClient(null);
+    } else {
+      alert("Erro ao excluir cliente: " + res.error);
     }
   };
 
@@ -157,7 +160,7 @@ export function ClientsList({ initialClients }: ClientsListProps) {
                         <button
                           onClick={() => {
                             setActiveMenuId(null);
-                            handleDelete(client.id, client.name);
+                            setDeletingClient({ id: client.id, name: client.name });
                           }}
                           className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
                         >
@@ -213,6 +216,17 @@ export function ClientsList({ initialClients }: ClientsListProps) {
         onSuccess={() => {
           window.location.reload();
         }}
+      />
+
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deletingClient}
+        onClose={() => setDeletingClient(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title="Remover Cliente"
+        description={`Tem certeza que deseja remover o cliente "${deletingClient?.name}"? Todas as captações, reuniões e tarefas vinculadas a este cliente também serão permanentemente excluídas.`}
+        confirmLabel="Sim, Remover"
       />
     </div>
   );

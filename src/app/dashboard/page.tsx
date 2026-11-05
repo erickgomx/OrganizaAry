@@ -23,7 +23,11 @@ export default async function DashboardPage() {
 
   // Fetch concurrently
   const [profileRes, clientsRes, eventsRes, tasksRes] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name, avatar_url, google_refresh_token")
+      .eq("id", user.id)
+      .single(),
     supabase.from("clients").select("id, name, phone").eq("user_id", user.id),
     supabase
       .from("events")
@@ -37,7 +41,16 @@ export default async function DashboardPage() {
       .order("due_date", { ascending: true, nullsFirst: false }),
   ]);
 
-  const profile = profileRes.data;
+  const rawProfile = profileRes.data;
+  const profile = rawProfile
+    ? {
+        id: rawProfile.id,
+        email: rawProfile.email,
+        full_name: rawProfile.full_name,
+        avatar_url: rawProfile.avatar_url,
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+      }
+    : null;
   const clients = (clientsRes.data || []) as { id: string; name: string; phone?: string | null }[];
   const events = (eventsRes.data || []) as unknown as EventWithClientInfo[];
   const tasks = (tasksRes.data || []) as unknown as TaskWithDetails[];

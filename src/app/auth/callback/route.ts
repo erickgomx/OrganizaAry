@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function getSafeRedirectUrl(nextParam: string | null, origin: string): URL {
+  if (
+    nextParam &&
+    nextParam.startsWith("/") &&
+    !nextParam.startsWith("//") &&
+    !nextParam.startsWith("/\\") &&
+    !nextParam.includes("\\")
+  ) {
+    try {
+      const parsed = new URL(nextParam, origin);
+      if (parsed.origin === origin) {
+        return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return new URL("/dashboard", origin);
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/dashboard";
+  const next = searchParams.get("next");
 
   if (code) {
     const supabase = await createClient();
@@ -48,16 +68,8 @@ export async function GET(request: Request) {
 
       await supabase.from("profiles").upsert(profileUpdates, { onConflict: "id" });
 
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocalEnv = process.env.NODE_ENV === "development";
-
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`);
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`);
-      } else {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
+      const destination = getSafeRedirectUrl(next, origin);
+      return NextResponse.redirect(destination);
     }
   }
 

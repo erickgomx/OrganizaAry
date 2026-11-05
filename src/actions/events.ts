@@ -97,6 +97,18 @@ export async function createEventAction(input: EventInput) {
     return { error: "A data e horário são obrigatórios." };
   }
 
+  // Validação BOLA/IDOR: Garantir que o cliente informado pertence ao usuário autenticado
+  const { data: clientOwnerCheck, error: clientOwnerError } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("id", input.clientId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (clientOwnerError || !clientOwnerCheck) {
+    return { error: "Cliente selecionado não encontrado ou inválido." };
+  }
+
   const { data, error } = await supabase
     .from("events")
     .insert({
@@ -152,8 +164,21 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
 
   const updatePayload: EventUpdate = {};
 
+  if (input.clientId !== undefined) {
+    const { data: clientOwnerCheck, error: clientOwnerError } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("id", input.clientId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (clientOwnerError || !clientOwnerCheck) {
+      return { error: "Cliente selecionado não encontrado ou inválido." };
+    }
+    updatePayload.client_id = input.clientId;
+  }
+
   if (input.title !== undefined) updatePayload.title = input.title.trim();
-  if (input.clientId !== undefined) updatePayload.client_id = input.clientId;
   if (input.date !== undefined) updatePayload.date = new Date(input.date).toISOString();
   if (input.location !== undefined) updatePayload.location = input.location?.trim() || null;
   if (input.status !== undefined) updatePayload.status = input.status;
