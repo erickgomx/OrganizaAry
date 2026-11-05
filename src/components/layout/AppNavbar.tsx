@@ -145,10 +145,10 @@ export function AppNavbar({ profile }: AppNavbarProps) {
               onClick={() => setIsGuideOpen(true)}
               type="button"
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#9873a1] bg-[#1a151f] hover:bg-[#231c29] border border-[#33293c] hover:border-[#9873a1]/40 transition-all shadow-sm"
-              title="Abrir Tutorial e Guia do Usuário"
+              title="Abrir Guia e Instruções do Sistema"
             >
               <BookOpen className="w-3.5 h-3.5 text-[#9873a1]" />
-              <span className="hidden sm:inline">Guia de Uso</span>
+              <span className="hidden sm:inline">Guia & Instruções</span>
             </button>
 
             {isGoogleConnected ? (
@@ -210,7 +210,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] text-[#9873a1] hover:text-[#bba0c1] transition-colors"
           >
             <BookOpen className="h-4 w-4 text-[#9873a1]" />
-            <span>Guia</span>
+            <span>Instruções</span>
           </button>
         </div>
       </nav>
