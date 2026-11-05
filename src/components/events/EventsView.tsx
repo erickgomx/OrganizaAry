@@ -20,6 +20,8 @@ import {
   ArrowRight,
   Sparkles,
   Check,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
 import {
   EventWithClientInfo,
@@ -27,6 +29,11 @@ import {
   deleteEventAction,
 } from "@/actions/events";
 import { completeAllTasksForEventAction } from "@/actions/tasks";
+import {
+  syncCalendarAction,
+  generateMeetAction,
+  createDriveFoldersAction,
+} from "@/actions/google";
 import { EventStatus } from "@/types/database";
 import { EventModal } from "./EventModal";
 
@@ -43,6 +50,10 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
   const [editingEvent, setEditingEvent] = useState<EventWithClientInfo | null>(null);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [loadingGoogleAction, setLoadingGoogleAction] = useState<{
+    eventId: string;
+    type: "meet" | "drive" | "calendar";
+  } | null>(null);
 
   const statusMachine: {
     key: EventStatus;
@@ -115,10 +126,22 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
           prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev))
         );
 
-        // Automação: Ao marcar um evento como Finalizado, prompt para baixar todas as tarefas
+        // Gatilho 1: Ao confirmar fechamento ('scheduled' / Agendado)
+        // Oferece gerar estrutura de pastas no Drive e sincronizar no Calendar
+        if (newStatus === "scheduled") {
+          const syncConfirm = confirm(
+            "Captação agendada com sucesso! Deseja sincronizar com o Google Calendar e criar as pastas [RAWs] e [Entregas] no Google Drive agora?"
+          );
+          if (syncConfirm) {
+            handleDriveAction(id);
+            handleCalendarSync(id);
+          }
+        }
+
+        // Gatilho 2: Ao marcar evento como Finalizado, prompt para baixar tarefas
         if (newStatus === "finished") {
           const autoFinishTasks = confirm(
-            "Captação finalizada com sucesso! Deseja marcar e baixar automaticamente todas as tarefas de pós-produção vinculadas a este evento no Kanban como 'Concluídas'?"
+            "Captação finalizada! Deseja marcar e baixar automaticamente todas as tarefas de pós-produção vinculadas a este evento no Kanban como 'Concluídas'?"
           );
           if (autoFinishTasks) {
             await completeAllTasksForEventAction(id);
@@ -129,6 +152,110 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
       console.error("Erro ao alterar status:", err);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  // Google Meet Trigger
+  const handleMeetAction = async (ev: EventWithClientInfo) => {
+    if (ev.meet_link) {
+      window.open(ev.meet_link, "_blank");
+      return;
+    }
+
+    try {
+      setLoadingGoogleAction({ eventId: ev.id, type: "meet" });
+      const res = await generateMeetAction(ev.id);
+      if (!res.success) {
+        alert(res.error);
+        return;
+      }
+
+      setEvents((prev) =>
+        prev.map((item) =>
+          item.id === ev.id ? { ...item, meet_link: res.meetLink } : item
+        )
+      );
+      const openNow = confirm(
+        `Link do Google Meet gerado com sucesso!\n${res.meetLink}\n\nDeseja abrir a sala agora?`
+      );
+      if (openNow) {
+        window.open(res.meetLink, "_blank");
+      }
+    } catch (err) {
+      console.error("Erro ao gerar Meet:", err);
+    } finally {
+      setLoadingGoogleAction(null);
+    }
+  };
+
+  // Google Drive Folders Trigger
+  const handleDriveAction = async (eventId: string) => {
+    const ev = events.find((e) => e.id === eventId);
+    if (ev?.drive_folder_url) {
+      window.open(ev.drive_folder_url, "_blank");
+      return;
+    }
+
+    try {
+      setLoadingGoogleAction({ eventId, type: "drive" });
+      const res = await createDriveFoldersAction(eventId);
+      if (!res.success) {
+        alert(res.error);
+        return;
+      }
+
+      setEvents((prev) =>
+        prev.map((item) =>
+          item.id === eventId
+            ? {
+                ...item,
+                drive_folder_url: res.folderUrl,
+                drive_folder_id: res.folderId,
+              }
+            : item
+        )
+      );
+
+      const openDrive = confirm(
+        `Estrutura de pastas gerada no Google Drive!\n[Ano/Mês] - [Cliente] - [Evento] / RAWs e / Entregas.\n\nDeseja abrir a pasta no Google Drive?`
+      );
+      if (openDrive) {
+        window.open(res.folderUrl, "_blank");
+      }
+    } catch (err) {
+      console.error("Erro ao criar pastas no Drive:", err);
+    } finally {
+      setLoadingGoogleAction(null);
+    }
+  };
+
+  // Google Calendar Sync Trigger
+  const handleCalendarSync = async (eventId: string) => {
+    try {
+      setLoadingGoogleAction({ eventId, type: "calendar" });
+      const res = await syncCalendarAction(eventId);
+      if (!res.success) {
+        alert(res.error);
+        return;
+      }
+
+      alert("Evento sincronizado com sucesso na sua agenda do Google Calendar!");
+      if (res.googleEventId) {
+        setEvents((prev) =>
+          prev.map((item) =>
+            item.id === eventId
+              ? { ...item, google_event_id: res.googleEventId }
+              : item
+          )
+        );
+      }
+      if (res.htmlLink) {
+        window.open(res.htmlLink, "_blank");
+      }
+    } catch (err) {
+      console.error("Erro ao sincronizar Calendar:", err);
+    } finally {
+      setLoadingGoogleAction(null);
     }
   };
 
@@ -198,7 +325,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
         </button>
       </div>
 
-      {/* Status Machine Tabs (Mobile-Scrollable) */}
+      {/* Status Machine Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-neutral-800">
         <button
           onClick={() => setActiveTab("all")}
@@ -253,6 +380,16 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
             const nextStatus = getNextStatus(ev.status);
             const nextStatusObj = nextStatus ? getStatusObj(nextStatus) : null;
             const isUpdating = updatingId === ev.id;
+
+            const isMeetLoading =
+              loadingGoogleAction?.eventId === ev.id &&
+              loadingGoogleAction.type === "meet";
+            const isDriveLoading =
+              loadingGoogleAction?.eventId === ev.id &&
+              loadingGoogleAction.type === "drive";
+            const isCalendarLoading =
+              loadingGoogleAction?.eventId === ev.id &&
+              loadingGoogleAction.type === "calendar";
 
             return (
               <div
@@ -349,7 +486,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                   </div>
                 </div>
 
-                {/* Status Machine Fast-Forward Trigger */}
+                {/* Status Machine Fast-Forward Trigger & Google Integration Buttons */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/60">
                   {nextStatusObj ? (
                     <button
@@ -369,44 +506,66 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                   )}
 
                   {/* Google Integration Trigger Quick-Pills */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     {/* Meet Briefing Generator button */}
                     <button
-                      onClick={() => {
-                        alert(
-                          `Gerador de Google Meet para "${ev.title}". (Gatilho pronto para integração direta com a API do Google na Fase 5).`
-                        );
-                      }}
-                      className="p-1.5 rounded-lg bg-neutral-800/80 text-neutral-400 hover:text-blue-400 hover:bg-neutral-800 transition-colors"
-                      title="Gerar reunião Google Meet"
+                      onClick={() => handleMeetAction(ev)}
+                      disabled={isMeetLoading}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        ev.meet_link
+                          ? "bg-blue-950/60 text-blue-400 border border-blue-800/50 hover:bg-blue-900/60"
+                          : "bg-neutral-800/80 text-neutral-400 hover:text-blue-400 hover:bg-neutral-800"
+                      }`}
+                      title={ev.meet_link ? "Entrar na reunião Google Meet" : "Gerar link Google Meet"}
                     >
-                      <Video className="w-3.5 h-3.5" />
+                      {isMeetLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Video className="w-3.5 h-3.5" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">
+                        {ev.meet_link ? "Meet" : "Criar Meet"}
+                      </span>
                     </button>
 
                     {/* Google Drive Folder Trigger */}
                     <button
-                      onClick={() => {
-                        alert(
-                          `Criador de pastas Google Drive: [${new Date(ev.date).getFullYear()}/${new Date(ev.date).getMonth() + 1}] - [${ev.client?.name}] - [${ev.title}] / RAWs e Entregas. (Gatilho pronto para integração na Fase 5).`
-                        );
-                      }}
-                      className="p-1.5 rounded-lg bg-neutral-800/80 text-neutral-400 hover:text-amber-400 hover:bg-neutral-800 transition-colors"
-                      title="Google Drive RAWs & Entregas"
+                      onClick={() => handleDriveAction(ev.id)}
+                      disabled={isDriveLoading}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        ev.drive_folder_url
+                          ? "bg-amber-950/60 text-amber-400 border border-amber-800/50 hover:bg-amber-900/60"
+                          : "bg-neutral-800/80 text-neutral-400 hover:text-amber-400 hover:bg-neutral-800"
+                      }`}
+                      title={ev.drive_folder_url ? "Abrir pasta no Google Drive" : "Criar pastas RAWs & Entregas no Drive"}
                     >
-                      <FolderOpen className="w-3.5 h-3.5" />
+                      {isDriveLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FolderOpen className="w-3.5 h-3.5" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">
+                        {ev.drive_folder_url ? "Drive" : "Pastas RAW"}
+                      </span>
                     </button>
 
                     {/* Google Calendar Sync Trigger */}
                     <button
-                      onClick={() => {
-                        alert(
-                          `Sincronização Google Calendar: Captação "${ev.title}" agendada para ${formatDate(ev.date)}. (Gatilho pronto para a Fase 5).`
-                        );
-                      }}
-                      className="p-1.5 rounded-lg bg-neutral-800/80 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800 transition-colors"
+                      onClick={() => handleCalendarSync(ev.id)}
+                      disabled={isCalendarLoading}
+                      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        ev.google_event_id
+                          ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 hover:bg-emerald-900/60"
+                          : "bg-neutral-800/80 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800"
+                      }`}
                       title="Sincronizar no Google Calendar"
                     >
-                      <CalendarCheck2 className="w-3.5 h-3.5" />
+                      {isCalendarLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <CalendarCheck2 className="w-3.5 h-3.5" />
+                      )}
+                      <span className="text-[10px] hidden sm:inline">Agenda</span>
                     </button>
                   </div>
                 </div>
