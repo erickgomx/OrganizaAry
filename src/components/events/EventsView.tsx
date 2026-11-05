@@ -26,6 +26,7 @@ import {
   updateEventStatusAction,
   deleteEventAction,
 } from "@/actions/events";
+import { completeAllTasksForEventAction } from "@/actions/tasks";
 import { EventStatus } from "@/types/database";
 import { EventModal } from "./EventModal";
 
@@ -113,6 +114,16 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
         setEvents((prev) =>
           prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev))
         );
+
+        // Automação: Ao marcar um evento como Finalizado, prompt para baixar todas as tarefas
+        if (newStatus === "finished") {
+          const autoFinishTasks = confirm(
+            "Captação finalizada com sucesso! Deseja marcar e baixar automaticamente todas as tarefas de pós-produção vinculadas a este evento no Kanban como 'Concluídas'?"
+          );
+          if (autoFinishTasks) {
+            await completeAllTasksForEventAction(id);
+          }
+        }
       }
     } catch (err) {
       console.error("Erro ao alterar status:", err);
