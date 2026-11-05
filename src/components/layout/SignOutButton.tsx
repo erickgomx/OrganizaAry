@@ -24,13 +24,13 @@ export function SignOutButton() {
       onClick={handleSignOut}
       disabled={loading}
       type="button"
-      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#1a1917] transition-colors"
       title="Encerrar sessão"
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#c8a97e]" />
       ) : (
-        <LogOut className="w-4 h-4" />
+        <LogOut className="w-3.5 h-3.5" />
       )}
       <span className="hidden sm:inline">Sair</span>
     </button>

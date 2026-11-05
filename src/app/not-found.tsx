@@ -4,8 +4,8 @@ import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center p-2 shadow-inner">
+    <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] flex flex-col items-center justify-center p-6 text-center space-y-4 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
+      <div className="w-16 h-16 rounded-2xl bg-[#161513] border border-[#2d2822] flex items-center justify-center p-2.5 shadow-sm">
         <Image
           src="/logo.png"
           alt="OrganizaAry"
@@ -14,15 +14,19 @@ export default function NotFound() {
           className="w-full h-full object-contain"
         />
       </div>
-      <h2 className="text-xl font-bold text-white">Página não encontrada (404)</h2>
-      <p className="text-xs text-neutral-400 max-w-sm">
-        O link solicitado não foi encontrado ou foi movido.
-      </p>
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold text-[#f6f4ef] tracking-tight">
+          Página não encontrada (404)
+        </h2>
+        <p className="text-xs text-[#8e887f] max-w-xs">
+          O link solicitado não existe ou foi realocado.
+        </p>
+      </div>
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold border border-neutral-700 transition-colors"
+        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-3.5 h-3.5" />
         <span>Ir para o Início</span>
       </Link>
     </div>

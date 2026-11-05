@@ -32,7 +32,6 @@ export function EventModal({
   const getInitialDateTime = () => {
     if (event?.date) {
       const d = new Date(event.date);
-      // Format as YYYY-MM-DDTHH:mm for datetime-local
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
@@ -89,40 +88,40 @@ export function EventModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-lg rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-400" />
-            {isEditing ? "Editar Captação" : "Nova Captação / Evento"}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="w-full max-w-lg rounded-2xl border border-[#2d2822] bg-[#161513] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#23201c] pb-3">
+          <h3 className="text-sm font-semibold text-[#f6f4ef] flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#c8a97e]" />
+            {isEditing ? "Editar Detalhes da Captação" : "Nova Captação / Evento"}
           </h3>
           <button
             onClick={onClose}
             type="button"
-            className="rounded-lg p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+            className="rounded-lg p-1 text-[#736e65] hover:text-[#f6f4ef] hover:bg-[#1c1a18] transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-950/40 p-3 text-xs text-red-300 border border-red-800/40">
+          <div className="rounded-lg bg-red-950/20 p-3 text-xs text-red-300 border border-red-900/30">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1">
+            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
               Cliente Vinculado *
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
+              <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
               <select
                 required
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 pl-10 pr-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
               >
                 {clients.length === 0 ? (
                   <option value="">Nenhum cliente cadastrado ainda</option>
@@ -138,7 +137,7 @@ export function EventModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1">
+            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
               Título da Captação / Projeto *
             </label>
             <input
@@ -147,13 +146,13 @@ export function EventModal({
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Ensaio Gestante, Casamento Itally & Erick"
-              className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 px-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 px-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1">
+              <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
                 Data e Horário *
               </label>
               <div className="relative">
@@ -162,17 +161,17 @@ export function EventModal({
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 px-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 [color-scheme:dark]"
+                  className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 px-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors [color-scheme:dark]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-neutral-300 mb-1">
+              <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
                 Valor Cobrado (R$)
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
+                <DollarSign className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
                 <input
                   type="number"
                   step="0.01"
@@ -182,38 +181,38 @@ export function EventModal({
                     setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 pl-10 pr-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors tabular-nums"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1">
+            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
               Localização / Set
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
+              <MapPin className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
               <input
                 type="text"
                 value={formData.location || ""}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Ex: Praia da Joaquina, Estúdio Central"
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 pl-10 pr-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1">
+            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
               Fase da Máquina de Estados (Status)
             </label>
             <div className="relative">
-              <CheckCircle className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
+              <CheckCircle className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2.5 pl-10 pr-3 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
               >
                 <option value="budget_lead">1. Orçamento / Lead</option>
                 <option value="scheduled">2. Agendado (Fechado)</option>
@@ -225,34 +224,34 @@ export function EventModal({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-300 mb-1">
+            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
               Briefing / Observações
             </label>
             <div className="relative">
-              <FileText className="absolute left-3 top-3 w-4 h-4 text-neutral-500" />
+              <FileText className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
               <textarea
                 rows={2}
                 value={formData.notes || ""}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 py-2 pl-10 pr-3 text-sm text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors resize-none"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#23201c]">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+              className="px-3 py-1.5 rounded-xl border border-[#26231f] bg-[#181715] text-[#8e887f] hover:text-[#f6f4ef] text-xs font-medium transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-all active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{isEditing ? "Atualizar Evento" : "Criar Evento"}</span>

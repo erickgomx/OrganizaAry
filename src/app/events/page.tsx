@@ -40,50 +40,50 @@ export default async function EventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 pb-20 md:pb-10">
+    <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] pb-20 md:pb-12 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
       <AppNavbar profile={profile} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-blue-400" />
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#f6f4ef] tracking-tight flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[#c8a97e]" />
             Captações & Pipeline de Eventos
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400 mt-0.5">
-            Máquina de estados operacional: Orçamento/Lead → Agendado → Captação → Pós-Produção → Finalizado.
+          <p className="text-xs sm:text-sm text-[#9d978d]">
+            Fluxo em 5 etapas: Orçamento/Lead &rarr; Agendado &rarr; Captação &rarr; Pós-Produção &rarr; Finalizado.
           </p>
         </div>
 
         {/* Pipeline Summary Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-blue-950/60 border border-blue-800/40 text-blue-400">
-              <Film className="w-5 h-5" />
+          <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4 flex items-center gap-3.5">
+            <div className="p-2.5 rounded-lg bg-[#1c1a18] border border-[#2d2822] text-[#c8a97e]">
+              <Film className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase text-neutral-400">Captações Ativas</p>
-              <p className="text-xl font-bold text-white">{activeEventsCount}</p>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase text-neutral-400">Valor em Pipeline</p>
-              <p className="text-xl font-bold text-emerald-400">{formatBRL(totalPipelineRevenue)}</p>
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[#8e887f]">Captações Ativas</p>
+              <p className="text-xl font-semibold text-[#f6f4ef] tabular-nums">{activeEventsCount}</p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-amber-950/60 border border-amber-800/40 text-amber-400">
-              <Clock className="w-5 h-5" />
+          <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4 flex items-center gap-3.5">
+            <div className="p-2.5 rounded-lg bg-[#1c1a18] border border-[#2d2822] text-[#c8a97e]">
+              <DollarSign className="w-4 h-4" />
             </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase text-neutral-400">Total de Eventos</p>
-              <p className="text-xl font-bold text-white">{events.length}</p>
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[#8e887f]">Valor em Pipeline</p>
+              <p className="text-xl font-semibold text-[#dfba88] tabular-nums">{formatBRL(totalPipelineRevenue)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4 flex items-center gap-3.5">
+            <div className="p-2.5 rounded-lg bg-[#1c1a18] border border-[#2d2822] text-[#c8a97e]">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-[#8e887f]">Total de Eventos</p>
+              <p className="text-xl font-semibold text-[#f6f4ef] tabular-nums">{events.length}</p>
             </div>
           </div>
         </div>

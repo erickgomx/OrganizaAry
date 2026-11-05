@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import Image from "next/image";
-import { Film, Calendar, CheckSquare, Sparkles } from "lucide-react";
+import { Calendar, Film, CheckSquare } from "lucide-react";
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export const metadata: Metadata = {
   title: "Login | OrganizaAry",
-  description: "Painel de controle para gestão de fluxo de trabalho audiovisual e fotográfico.",
+  description: "Acesso à plataforma de gestão fotográfica e audiovisual OrganizaAry.",
 };
 
 interface LoginPageProps {
@@ -17,67 +17,62 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const error = resolvedParams.error;
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between bg-neutral-950 text-neutral-100 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-      {/* Background cinematic aura & subtle golden warm glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-950/20 via-neutral-950 to-neutral-950 pointer-events-none" />
-      <div className="absolute -top-32 -left-32 w-80 h-80 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative min-h-screen flex flex-col justify-between bg-[#0e0d0c] text-[#f6f4ef] px-4 py-8 sm:px-6 lg:px-8 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
+      {/* Subtle atmospheric ambient glow matching logo warmth */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(200,169,126,0.06)_0%,_transparent_65%)] pointer-events-none" />
 
       {/* Header / Brand */}
-      <header className="relative z-10 flex items-center justify-between max-w-md w-full mx-auto">
+      <header className="relative z-10 flex items-center justify-between max-w-sm w-full mx-auto">
         <div className="flex items-center gap-3">
-          <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-neutral-900 border border-neutral-800 shadow-md p-1 overflow-hidden">
+          <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-[#161513] border border-[#272420] p-1 shadow-sm">
             <Image
               src="/logo.png"
               alt="OrganizaAry Logo"
-              width={44}
-              height={44}
+              width={36}
+              height={36}
               className="w-full h-full object-contain"
               priority
             />
           </div>
           <div>
-            <h1 className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="text-sm font-medium tracking-tight text-[#f6f4ef]">
               OrganizaAry
-              <span className="text-[10px] font-semibold tracking-wider uppercase px-1.5 py-0.5 rounded bg-neutral-800 text-amber-300 border border-amber-900/40">
-                PRO
-              </span>
             </h1>
-            <p className="text-xs text-neutral-400">Gestão Fotográfica & Audiovisual</p>
+            <p className="text-[11px] text-[#8e887f]">Studio & Audiovisual</p>
           </div>
         </div>
       </header>
 
       {/* Central Login Card */}
-      <main className="relative z-10 max-w-md w-full mx-auto my-auto py-8">
-        <div className="rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6">
-          {/* Logo Brand Emblem */}
+      <main className="relative z-10 max-w-sm w-full mx-auto my-auto py-6">
+        <div className="rounded-2xl border border-[#272420] bg-[#161513]/90 p-6 sm:p-7 backdrop-blur-sm shadow-xl space-y-6">
+          {/* Logo Emblem & Heading */}
           <div className="flex flex-col items-center text-center space-y-3">
-            <div className="relative w-20 h-20 rounded-3xl bg-neutral-900/90 border border-neutral-800 p-2 shadow-inner flex items-center justify-center">
+            <div className="relative w-24 h-24 rounded-full bg-[#1b1917]/80 border border-[#c8a97e]/20 p-3 shadow-inner flex items-center justify-center">
               <Image
                 src="/logo.png"
                 alt="OrganizaAry Logo"
-                width={72}
-                height={72}
+                width={84}
+                height={84}
                 className="w-full h-full object-contain"
                 priority
               />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-1.5">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-[#f6f4ef] tracking-tight">
                 Painel Operacional
               </h2>
-              <p className="text-xs text-neutral-400 mt-1 leading-relaxed">
-                Centralize clientes, agendamento de ensaios, pós-produção e integração Google Workspace.
+              <p className="text-xs text-[#9d978d] leading-relaxed">
+                Gestão integrada de clientes, ensaios e pós-produção em um só lugar.
               </p>
             </div>
           </div>
 
           {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-950/30 p-3.5 text-xs text-red-300">
+            <div className="rounded-xl border border-red-900/30 bg-red-950/20 p-3 text-xs text-red-300">
               {error === "auth_callback_failed"
-                ? "Falha na sincronização com o Google. Por favor, tente novamente."
-                : "Não foi possível concluir o login. Verifique sua conexão e tente novamente."}
+                ? "Não foi possível concluir a autenticação com o Google. Tente novamente."
+                : "Erro na autenticação. Por favor, tente novamente."}
             </div>
           )}
 
@@ -86,27 +81,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <GoogleSignInButton />
           </div>
 
-          {/* Quick value props / Feature pills */}
-          <div className="pt-4 border-t border-neutral-800/80">
-            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-3">
-              Recursos Integrados
+          {/* Feature indicators - delicate, restrained, fine-line */}
+          <div className="pt-4 border-t border-[#23201c] space-y-2">
+            <p className="text-[10px] uppercase font-medium tracking-wider text-[#736e65]">
+              Módulos Integrados
             </p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-neutral-400">
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/40 border border-neutral-800/40">
-                <Calendar className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                <span>Google Calendar</span>
+            <div className="grid grid-cols-3 gap-2 text-[11px] text-[#9d978d]">
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420]">
+                <Calendar className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Agenda</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/40 border border-neutral-800/40">
-                <Film className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span>Google Drive RAW</span>
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420]">
+                <Film className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Captação</span>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/40 border border-neutral-800/40">
-                <CheckSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Kanban Pós-Prod</span>
-              </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-neutral-950/40 border border-neutral-800/40">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>CRM 360º</span>
+              <div className="flex flex-col items-center justify-center text-center p-2 rounded-lg bg-[#1a1917] border border-[#272420]">
+                <CheckSquare className="w-3.5 h-3.5 text-[#c8a97e] mb-1" />
+                <span>Kanban</span>
               </div>
             </div>
           </div>
@@ -114,8 +105,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 max-w-md w-full mx-auto text-center text-xs text-neutral-600">
-        <p>OrganizaAry • Exclusivo para gestão de fotografia e audiovisual.</p>
+      <footer className="relative z-10 max-w-sm w-full mx-auto text-center">
+        <p className="text-[11px] text-[#736e65]">
+          OrganizaAry &copy; {new Date().getFullYear()} &bull; Todos os direitos reservados
+        </p>
       </footer>
     </div>
   );

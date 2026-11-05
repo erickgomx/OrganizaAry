@@ -43,7 +43,7 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
     .single();
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 pb-20 md:pb-10">
+    <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] pb-20 md:pb-12 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
       <AppNavbar profile={profile} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">

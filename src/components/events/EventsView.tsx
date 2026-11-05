@@ -16,12 +16,9 @@ import {
   FolderOpen,
   CalendarCheck2,
   Search,
-  Filter,
   ArrowRight,
-  Sparkles,
   Check,
   Loader2,
-  ExternalLink,
 } from "lucide-react";
 import {
   EventWithClientInfo,
@@ -67,41 +64,41 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
       key: "budget_lead",
       label: "Orçamento / Lead",
       step: 1,
-      color: "text-amber-400",
-      bg: "bg-amber-950/40",
-      border: "border-amber-800/40",
+      color: "text-[#d4a359]",
+      bg: "bg-[#211a12]",
+      border: "border-[#382b1d]",
     },
     {
       key: "scheduled",
       label: "Agendado",
       step: 2,
-      color: "text-blue-400",
-      bg: "bg-blue-950/40",
-      border: "border-blue-800/40",
+      color: "text-[#94a3b8]",
+      bg: "bg-[#161a20]",
+      border: "border-[#252c38]",
     },
     {
       key: "captured",
       label: "Captação Concluída",
       step: 3,
-      color: "text-purple-400",
-      bg: "bg-purple-950/40",
-      border: "border-purple-800/40",
+      color: "text-[#c8a97e]",
+      bg: "bg-[#1c1a18]",
+      border: "border-[#332e27]",
     },
     {
       key: "post_production",
       label: "Pós-Produção",
       step: 4,
-      color: "text-orange-400",
-      bg: "bg-orange-950/40",
-      border: "border-orange-800/40",
+      color: "text-[#d48970]",
+      bg: "bg-[#211714]",
+      border: "border-[#3b2520]",
     },
     {
       key: "finished",
       label: "Finalizado",
       step: 5,
-      color: "text-emerald-400",
-      bg: "bg-emerald-950/40",
-      border: "border-emerald-800/40",
+      color: "text-[#9fc193]",
+      bg: "bg-[#162017]",
+      border: "border-[#273829]",
     },
   ];
 
@@ -126,8 +123,6 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
           prev.map((ev) => (ev.id === id ? { ...ev, status: newStatus } : ev))
         );
 
-        // Gatilho 1: Ao confirmar fechamento ('scheduled' / Agendado)
-        // Oferece gerar estrutura de pastas no Drive e sincronizar no Calendar
         if (newStatus === "scheduled") {
           const syncConfirm = confirm(
             "Captação agendada com sucesso! Deseja sincronizar com o Google Calendar e criar as pastas [RAWs] e [Entregas] no Google Drive agora?"
@@ -138,7 +133,6 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
           }
         }
 
-        // Gatilho 2: Ao marcar evento como Finalizado, prompt para baixar tarefas
         if (newStatus === "finished") {
           const autoFinishTasks = confirm(
             "Captação finalizada! Deseja marcar e baixar automaticamente todas as tarefas de pós-produção vinculadas a este evento no Kanban como 'Concluídas'?"
@@ -302,13 +296,13 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
       {/* Search & Actions Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-neutral-500" />
+          <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Buscar por evento, cliente ou local..."
-            className="w-full rounded-xl border border-neutral-800 bg-neutral-900/80 py-2 pl-9 pr-3 text-xs text-white placeholder-neutral-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-xl border border-[#26231f] bg-[#151412] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
           />
         </div>
 
@@ -318,21 +312,21 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
             setIsModalOpen(true);
           }}
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition-all active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Nova Captação</span>
         </button>
       </div>
 
       {/* Status Machine Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-neutral-800">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-[#23201c]">
         <button
           onClick={() => setActiveTab("all")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
             activeTab === "all"
-              ? "bg-neutral-800 text-white shadow-sm"
-              : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900"
+              ? "bg-[#1c1a18] text-[#dfba88] border border-[#332e27] shadow-sm"
+              : "text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#151412]"
           }`}
         >
           Todas ({events.length})
@@ -345,16 +339,16 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
             <button
               key={sm.key}
               onClick={() => setActiveTab(sm.key)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 isActive
                   ? `${sm.bg} ${sm.color} border ${sm.border}`
-                  : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900"
+                  : "text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#151412]"
               }`}
             >
               <span>{sm.label}</span>
               <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  isActive ? "bg-black/30" : "bg-neutral-800 text-neutral-400"
+                className={`px-1.5 py-0.2 rounded-full text-[10px] tabular-nums ${
+                  isActive ? "bg-black/40" : "bg-[#1c1a18] text-[#736e65]"
                 }`}
               >
                 {count}
@@ -366,15 +360,15 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
 
       {/* Event Cards Grid */}
       {filteredEvents.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-900/20 p-12 text-center space-y-3">
-          <Calendar className="w-8 h-8 text-neutral-600 mx-auto" />
-          <p className="text-sm font-medium text-neutral-300">Nenhuma captação nesta etapa.</p>
-          <p className="text-xs text-neutral-500 max-w-xs mx-auto">
+        <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-12 text-center space-y-2">
+          <Calendar className="w-6 h-6 text-[#736e65] mx-auto" />
+          <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">Nenhuma captação nesta etapa.</p>
+          <p className="text-xs text-[#736e65] max-w-xs mx-auto">
             Crie novos eventos ou altere os filtros de status acima.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {filteredEvents.map((ev) => {
             const status = getStatusObj(ev.status);
             const nextStatus = getNextStatus(ev.status);
@@ -394,29 +388,29 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
             return (
               <div
                 key={ev.id}
-                className="group relative rounded-2xl border border-neutral-800/80 bg-neutral-900/50 hover:bg-neutral-900/90 hover:border-neutral-700 transition-all p-5 flex flex-col justify-between space-y-4 shadow-sm"
+                className="group relative rounded-2xl border border-[#26231f] bg-[#151412] hover:border-[#38332c] hover:bg-[#181715] transition-all p-4 sm:p-5 flex flex-col justify-between space-y-4 shadow-sm"
               >
                 {/* Header: Title, Client & Menu */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span
-                        className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${status.bg} ${status.color} ${status.border}`}
+                        className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full border ${status.bg} ${status.color} ${status.border}`}
                       >
                         {status.step}. {status.label}
                       </span>
                     </div>
 
-                    <h3 className="font-bold text-white text-base leading-snug pt-0.5">
+                    <h3 className="font-semibold text-[#f6f4ef] text-sm sm:text-base leading-snug pt-0.5">
                       {ev.title}
                     </h3>
 
                     {ev.client && (
                       <Link
                         href={`/clients/${ev.client.id}`}
-                        className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-medium transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs text-[#c8a97e] hover:text-[#dfba88] font-medium transition-colors"
                       >
-                        <User className="w-3.5 h-3.5" />
+                        <User className="w-3 h-3" />
                         <span>{ev.client.name}</span>
                       </Link>
                     )}
@@ -427,23 +421,24 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                       onClick={() =>
                         setActiveMenuId(activeMenuId === ev.id ? null : ev.id)
                       }
-                      className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors"
+                      className="p-1.5 rounded-lg text-[#736e65] hover:text-[#f6f4ef] hover:bg-[#1c1a18] transition-colors"
                       type="button"
+                      title="Opções"
                     >
-                      <MoreVertical className="w-4 h-4" />
+                      <MoreVertical className="w-3.5 h-3.5" />
                     </button>
 
                     {activeMenuId === ev.id && (
-                      <div className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-neutral-800 bg-neutral-950 p-1.5 shadow-xl text-xs space-y-0.5">
+                      <div className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-[#2d2822] bg-[#181715] p-1.5 shadow-xl text-xs space-y-0.5">
                         <button
                           onClick={() => {
                             setEditingEvent(ev);
                             setIsModalOpen(true);
                             setActiveMenuId(null);
                           }}
-                          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-neutral-300 hover:bg-neutral-800 hover:text-white"
+                          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[#9d978d] hover:bg-[#221f1c] hover:text-[#f6f4ef] transition-colors"
                         >
-                          <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                          <Pencil className="w-3.5 h-3.5" />
                           <span>Editar</span>
                         </button>
                         <button
@@ -451,7 +446,7 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                             setActiveMenuId(null);
                             handleDelete(ev.id, ev.title);
                           }}
-                          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-red-400 hover:bg-red-950/40"
+                          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-[#d48970] hover:bg-[#261714] transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Excluir</span>
@@ -462,44 +457,44 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                 </div>
 
                 {/* Event Details: Date, Location, Value */}
-                <div className="grid grid-cols-2 gap-2 py-2 px-3 rounded-xl bg-neutral-950/60 border border-neutral-800/60 text-xs">
+                <div className="grid grid-cols-2 gap-2 py-2 px-3 rounded-xl bg-[#181715] border border-[#23201c] text-xs">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-neutral-300">
-                      <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                      <span>{formatDate(ev.date)}</span>
+                    <div className="flex items-center gap-1.5 text-[#9d978d]">
+                      <Clock className="w-3 h-3 text-[#736e65] shrink-0" />
+                      <span className="tabular-nums">{formatDate(ev.date)}</span>
                     </div>
                     {ev.location && (
-                      <div className="flex items-center gap-1.5 text-neutral-400">
-                        <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[#8e887f]">
+                        <MapPin className="w-3 h-3 text-[#736e65] shrink-0" />
                         <span className="truncate">{ev.location}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex flex-col items-end justify-center">
-                    <span className="text-[10px] uppercase font-semibold text-neutral-500">
+                    <span className="text-[10px] uppercase font-medium text-[#736e65]">
                       Investimento
                     </span>
-                    <span className="text-sm font-bold text-white">
+                    <span className="text-xs sm:text-sm font-semibold text-[#dfba88] tabular-nums">
                       {formatBRL(Number(ev.price))}
                     </span>
                   </div>
                 </div>
 
                 {/* Status Machine Fast-Forward Trigger & Google Integration Buttons */}
-                <div className="flex items-center justify-between gap-2 pt-2 border-t border-neutral-800/60">
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#23201c]">
                   {nextStatusObj ? (
                     <button
                       onClick={() => handleStatusChange(ev.id, nextStatusObj.key)}
                       disabled={isUpdating}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1c1a18] hover:bg-[#23201c] border border-[#2d2822] text-[#f6f4ef] text-xs font-medium transition-all active:scale-95 disabled:opacity-50"
                       title={`Avançar para: ${nextStatusObj.label}`}
                     >
                       <span>Avançar p/ {nextStatusObj.label}</span>
-                      <ArrowRight className="w-3 h-3 text-neutral-400" />
+                      <ArrowRight className="w-3 h-3 text-[#c8a97e]" />
                     </button>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-[#9fc193]">
                       <Check className="w-3.5 h-3.5" />
                       <span>Trabalho Finalizado</span>
                     </span>
@@ -513,15 +508,15 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                       disabled={isMeetLoading}
                       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         ev.meet_link
-                          ? "bg-blue-950/60 text-blue-400 border border-blue-800/50 hover:bg-blue-900/60"
-                          : "bg-neutral-800/80 text-neutral-400 hover:text-blue-400 hover:bg-neutral-800"
+                          ? "bg-[#161a20] text-[#94a3b8] border border-[#252c38] hover:bg-[#1e232c]"
+                          : "bg-[#1a1917] border border-[#26231f] text-[#8e887f] hover:text-[#f6f4ef]"
                       }`}
                       title={ev.meet_link ? "Entrar na reunião Google Meet" : "Gerar link Google Meet"}
                     >
                       {isMeetLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 animate-spin text-[#c8a97e]" />
                       ) : (
-                        <Video className="w-3.5 h-3.5" />
+                        <Video className="w-3 h-3" />
                       )}
                       <span className="text-[10px] hidden sm:inline">
                         {ev.meet_link ? "Meet" : "Criar Meet"}
@@ -534,15 +529,15 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                       disabled={isDriveLoading}
                       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         ev.drive_folder_url
-                          ? "bg-amber-950/60 text-amber-400 border border-amber-800/50 hover:bg-amber-900/60"
-                          : "bg-neutral-800/80 text-neutral-400 hover:text-amber-400 hover:bg-neutral-800"
+                          ? "bg-[#211a12] text-[#d4a359] border border-[#382b1d] hover:bg-[#2b2218]"
+                          : "bg-[#1a1917] border border-[#26231f] text-[#8e887f] hover:text-[#f6f4ef]"
                       }`}
                       title={ev.drive_folder_url ? "Abrir pasta no Google Drive" : "Criar pastas RAWs & Entregas no Drive"}
                     >
                       {isDriveLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 animate-spin text-[#c8a97e]" />
                       ) : (
-                        <FolderOpen className="w-3.5 h-3.5" />
+                        <FolderOpen className="w-3 h-3" />
                       )}
                       <span className="text-[10px] hidden sm:inline">
                         {ev.drive_folder_url ? "Drive" : "Pastas RAW"}
@@ -555,15 +550,15 @@ export function EventsView({ initialEvents, clients }: EventsViewProps) {
                       disabled={isCalendarLoading}
                       className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         ev.google_event_id
-                          ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 hover:bg-emerald-900/60"
-                          : "bg-neutral-800/80 text-neutral-400 hover:text-emerald-400 hover:bg-neutral-800"
+                          ? "bg-[#162017] text-[#9fc193] border border-[#273829] hover:bg-[#1e2e20]"
+                          : "bg-[#1a1917] border border-[#26231f] text-[#8e887f] hover:text-[#f6f4ef]"
                       }`}
                       title="Sincronizar no Google Calendar"
                     >
                       {isCalendarLoading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 animate-spin text-[#c8a97e]" />
                       ) : (
-                        <CalendarCheck2 className="w-3.5 h-3.5" />
+                        <CalendarCheck2 className="w-3 h-3" />
                       )}
                       <span className="text-[10px] hidden sm:inline">Agenda</span>
                     </button>
