@@ -1,0 +1,71 @@
+import { google } from "googleapis";
+import { createClient } from "@/lib/supabase/server";
+
+export const GOOGLE_OAUTH_SCOPES = [
+  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+  "openid",
+];
+
+export function createGoogleOAuth2Client() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`;
+
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
+/**
+ * Returns an authenticated Google OAuth2 client for the specified user ID,
+ * automatically handling token refresh if the access token has expired.
+ */
+export async function getAuthenticatedGoogleClient(userId: string) {
+  const supabase = await createClient();
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("google_refresh_token, google_access_token, token_expires_at")
+    .eq("id", userId)
+    .single();
+
+  if (error || !profile?.google_refresh_token) {
+    throw new Error(
+      "Google Refresh Token não encontrado para este usuário. Faça login novamente concedendo as permissões necessárias."
+    );
+  }
+
+  const oauth2Client = createGoogleOAuth2Client();
+
+  oauth2Client.setCredentials({
+    refresh_token: profile.google_refresh_token,
+    access_token: profile.google_access_token || undefined,
+  });
+
+  // Listen for automatic token refresh event to keep database updated
+  oauth2Client.on("tokens", async (tokens) => {
+    const updateData: {
+      google_access_token?: string;
+      google_refresh_token?: string;
+      token_expires_at?: string;
+    } = {};
+
+    if (tokens.access_token) {
+      updateData.google_access_token = tokens.access_token;
+    }
+    if (tokens.refresh_token) {
+      updateData.google_refresh_token = tokens.refresh_token;
+    }
+    if (tokens.expiry_date) {
+      updateData.token_expires_at = new Date(tokens.expiry_date).toISOString();
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await supabase.from("profiles").update(updateData).eq("id", userId);
+    }
+  });
+
+  return oauth2Client;
+}

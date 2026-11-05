@@ -58,7 +58,7 @@ Acesse `http://localhost:3000`.
 ## 📅 Roadmap de Execução
 
 - [x] **Fase 1 - Scaffold & Schema:** Setup Next.js, Tailwind, client Supabase SSR, tipos estritos TypeScript e DDL SQL com RLS.
-- [ ] **Fase 2 - Auth & Google Config:** SSO Google com escopo offline, captura de tokens e rotas de callback.
+- [x] **Fase 2 - Auth & Google Config:** SSO Google com escopo offline (`access_type=offline`), captura & persistência de tokens (`google_refresh_token`), middleware de proteção de rotas, interface mobile-first de login e cliente Google APIs com auto-refresh.
 - [ ] **Fase 3 - Core CRM & Eventos:** Gestão completa de clientes e captações (visão 360º).
 - [ ] **Fase 4 - Task Engine & Kanban:** Drag-and-drop interativo com Framer Motion.
 - [ ] **Fase 5 - Google APIs Integration:** Sincronização de calendário, geração de pastas no Drive e reuniões Meet.
