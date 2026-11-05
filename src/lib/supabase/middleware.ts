@@ -55,14 +55,14 @@ export async function updateSession(request: NextRequest) {
 
   // If user is not authenticated and trying to access a protected app route
   if (!user && !isAuthRoute && !isPublicAsset) {
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   // If user is authenticated and visits /login, redirect to dashboard
   if (user && pathname === "/login") {
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return supabaseResponse;
