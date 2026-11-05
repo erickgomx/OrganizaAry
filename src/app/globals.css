@@ -1,15 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0e0d0c;
-  --foreground: #f6f4ef;
-  --champagne: #c8a97e;
-  --champagne-light: #dfba88;
-  --champagne-dark: #a8885b;
-  --surface: #161513;
-  --surface-raised: #1c1a18;
-  --border-subtle: #272420;
-  --border-delicate: rgba(200, 169, 126, 0.14);
+  --background: #120e15;
+  --foreground: #f4eff5;
+  --lavender: #9873a1;
+  --lavender-light: #bba0c1;
+  --plum-dark: #6b4972;
+  --champagne: #9873a1;
+  --champagne-light: #bba0c1;
+  --champagne-dark: #6b4972;
+  --surface: #1a151f;
+  --surface-raised: #231c29;
+  --text-muted: #968a9c;
+  --text-subtle: #6e6375;
+  --border-subtle: #33293c;
+  --border-delicate: rgba(152, 115, 161, 0.15);
 }
 
 @theme inline {
@@ -17,6 +22,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-lavender: var(--lavender);
+  --color-lavender-light: var(--lavender-light);
+  --color-plum-dark: var(--plum-dark);
   --color-champagne: var(--champagne);
   --color-champagne-light: var(--champagne-light);
   --color-champagne-dark: var(--champagne-dark);
@@ -63,10 +71,10 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #272420;
+  background: #33293c;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3d3933;
+  background: #473954;
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -82,9 +82,9 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
     },
     captured: {
       label: "Captação Concluída",
-      color: "text-[#c8a97e]",
-      bg: "bg-[#1c1a18]",
-      border: "border-[#332e27]",
+      color: "text-[#9873a1]",
+      bg: "bg-[#231c29]",
+      border: "border-[#33293c]",
     },
     post_production: {
       label: "Pós-Produção",
@@ -106,7 +106,7 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
       <div>
         <Link
           href="/clients"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8e887f] hover:text-[#f6f4ef] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#968a9c] hover:text-[#f4eff5] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Voltar para lista de clientes</span>
@@ -114,22 +114,22 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
       </div>
 
       {/* Client Header Card */}
-      <div className="rounded-2xl border border-[#26231f] bg-[#151412] p-5 sm:p-6 shadow-sm space-y-5">
+      <div className="rounded-2xl border border-[#33293c] bg-[#120e15] p-5 sm:p-6 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#1c1a18] border border-[#2e2923] text-[#dfba88] flex items-center justify-center font-medium text-lg shadow-inner shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-[#231c29] border border-[#33293c] text-[#bba0c1] flex items-center justify-center font-medium text-lg shadow-inner shrink-0">
               {client.name.charAt(0).toUpperCase()}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-semibold text-[#f6f4ef] tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-semibold text-[#f4eff5] tracking-tight">
                   {client.name}
                 </h1>
-                <span className="text-[10px] font-medium uppercase px-2 py-0.5 rounded-full bg-[#1c1a18] text-[#c8a97e] border border-[#332e27]">
+                <span className="text-[10px] font-medium uppercase px-2 py-0.5 rounded-full bg-[#231c29] text-[#9873a1] border border-[#33293c]">
                   Visão 360º
                 </span>
               </div>
-              <p className="text-xs text-[#8e887f] mt-0.5">
+              <p className="text-xs text-[#968a9c] mt-0.5">
                 Cliente desde {new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(client.created_at))}
               </p>
             </div>
@@ -151,7 +151,7 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
             <button
               onClick={() => setIsEditClientOpen(true)}
               type="button"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1917] hover:bg-[#221f1c] text-[#f6f4ef] border border-[#26231f] transition-colors text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a151f] hover:bg-[#231c29] text-[#f4eff5] border border-[#33293c] transition-colors text-xs font-medium"
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>Editar</span>
@@ -170,40 +170,40 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
         </div>
 
         {/* Contact details row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-[#23201c] text-xs">
-          <div className="flex items-center gap-2 text-[#9d978d]">
-            <Phone className="w-3.5 h-3.5 text-[#736e65] shrink-0" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-[#33293c] text-xs">
+          <div className="flex items-center gap-2 text-[#968a9c]">
+            <Phone className="w-3.5 h-3.5 text-[#6e6375] shrink-0" />
             <span>{client.phone || "Telefone não informado"}</span>
           </div>
-          <div className="flex items-center gap-2 text-[#9d978d]">
-            <Mail className="w-3.5 h-3.5 text-[#736e65] shrink-0" />
+          <div className="flex items-center gap-2 text-[#968a9c]">
+            <Mail className="w-3.5 h-3.5 text-[#6e6375] shrink-0" />
             <span>{client.email || "E-mail não informado"}</span>
           </div>
-          <div className="flex items-center gap-2 text-[#9d978d]">
-            <FileText className="w-3.5 h-3.5 text-[#736e65] shrink-0" />
+          <div className="flex items-center gap-2 text-[#968a9c]">
+            <FileText className="w-3.5 h-3.5 text-[#6e6375] shrink-0" />
             <span className="truncate">{client.notes || "Nenhuma nota registrada"}</span>
           </div>
         </div>
       </div>
 
       {/* Resumo Financeiro Discreto */}
-      <div className="flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-xl bg-[#151412] border border-[#26231f] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-xl bg-[#120e15] border border-[#33293c] text-xs">
         <div className="flex items-center gap-6 flex-wrap">
           <div>
-            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Total de Ensaios</span>
-            <span className="text-sm font-semibold text-[#f6f4ef] tabular-nums">{stats.eventsCount}</span>
+            <span className="text-[10px] text-[#6e6375] uppercase font-medium block">Total de Ensaios</span>
+            <span className="text-sm font-semibold text-[#f4eff5] tabular-nums">{stats.eventsCount}</span>
           </div>
           <div>
-            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Total Faturado</span>
-            <span className="text-sm font-semibold text-[#dfba88] tabular-nums">{formatBRL(stats.totalRevenue)}</span>
+            <span className="text-[10px] text-[#6e6375] uppercase font-medium block">Total Faturado</span>
+            <span className="text-sm font-semibold text-[#bba0c1] tabular-nums">{formatBRL(stats.totalRevenue)}</span>
           </div>
           <div>
-            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Recebido</span>
+            <span className="text-[10px] text-[#6e6375] uppercase font-medium block">Recebido</span>
             <span className="text-sm font-semibold text-[#9fc193] tabular-nums">{formatBRL(stats.completedRevenue)}</span>
           </div>
           {stats.pendingRevenue > 0 && (
             <div>
-              <span className="text-[10px] text-[#736e65] uppercase font-medium block">A Receber</span>
+              <span className="text-[10px] text-[#6e6375] uppercase font-medium block">A Receber</span>
               <span className="text-sm font-semibold text-[#d4a359] tabular-nums">{formatBRL(stats.pendingRevenue)}</span>
             </div>
           )}
@@ -214,11 +214,11 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-[#f6f4ef] tracking-tight flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#c8a97e]" />
+            <h2 className="text-sm font-semibold text-[#f4eff5] tracking-tight flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#9873a1]" />
               Histórico de Captações & Projetos
             </h2>
-            <p className="text-xs text-[#8e887f]">
+            <p className="text-xs text-[#968a9c]">
               Todos os trabalhos registrados para este cliente com status e valores.
             </p>
           </div>
@@ -226,7 +226,7 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
           <button
             onClick={() => setIsNewEventOpen(true)}
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Nova Captação</span>
@@ -234,10 +234,10 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
         </div>
 
         {events.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-10 text-center space-y-2">
-            <Film className="w-6 h-6 text-[#736e65] mx-auto" />
-            <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">Nenhum evento registrado ainda.</p>
-            <p className="text-xs text-[#736e65] max-w-xs mx-auto">
+          <div className="rounded-2xl border border-dashed border-[#33293c] bg-[#120e15]/40 p-10 text-center space-y-2">
+            <Film className="w-6 h-6 text-[#6e6375] mx-auto" />
+            <p className="text-xs sm:text-sm font-medium text-[#f4eff5]">Nenhum evento registrado ainda.</p>
+            <p className="text-xs text-[#6e6375] max-w-xs mx-auto">
               Clique em &quot;Nova Captação&quot; para registrar um ensaio, casamento ou cobertura para este cliente.
             </p>
           </div>
@@ -248,11 +248,11 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
               return (
                 <div
                   key={ev.id}
-                  className="rounded-xl border border-[#26231f] bg-[#151412] p-4 hover:border-[#38332c] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
+                  className="rounded-xl border border-[#33293c] bg-[#120e15] p-4 hover:border-[#33293c] transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5 flex-wrap">
-                      <h3 className="font-semibold text-[#f6f4ef] text-xs sm:text-sm">{ev.title}</h3>
+                      <h3 className="font-semibold text-[#f4eff5] text-xs sm:text-sm">{ev.title}</h3>
                       <span
                         className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${status.bg} ${status.color} ${status.border}`}
                       >
@@ -260,34 +260,34 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 text-[11px] text-[#8e887f] flex-wrap">
+                    <div className="flex items-center gap-4 text-[11px] text-[#968a9c] flex-wrap">
                       <span className="flex items-center gap-1 tabular-nums">
-                        <Clock className="w-3 h-3 text-[#736e65]" />
+                        <Clock className="w-3 h-3 text-[#6e6375]" />
                         {formatDate(ev.date)}
                       </span>
                       {ev.location && (
                         <span className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-[#736e65]" />
+                          <MapPin className="w-3 h-3 text-[#6e6375]" />
                           {ev.location}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-[#23201c]">
-                    <span className="text-xs sm:text-sm font-semibold text-[#dfba88] tabular-nums sm:text-right">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-[#33293c]">
+                    <span className="text-xs sm:text-sm font-semibold text-[#bba0c1] tabular-nums sm:text-right">
                       {formatBRL(Number(ev.price))}
                     </span>
                     <Link
                       href="/events"
-                      className="text-xs text-[#c8a97e] hover:text-[#dfba88] font-medium"
+                      className="text-xs text-[#9873a1] hover:text-[#bba0c1] font-medium"
                     >
                       Ver no Pipeline &rarr;
                     </Link>
                     <button
                       onClick={() => setDeletingEvent({ id: ev.id, title: ev.title })}
                       type="button"
-                      className="p-1.5 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                      className="p-1.5 rounded-lg text-[#6e6375] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
                       title="Remover captação"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

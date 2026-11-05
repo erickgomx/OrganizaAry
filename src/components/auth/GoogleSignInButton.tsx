@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -51,12 +51,12 @@ export function GoogleSignInButton() {
         onClick={handleSignIn}
         disabled={isLoading}
         type="button"
-        className="group relative flex w-full items-center justify-center gap-3 rounded-xl border border-[#302c26] bg-[#161513] hover:bg-[#1c1a18] hover:border-[#c8a97e]/40 px-5 py-3 text-xs sm:text-sm font-medium text-[#f6f4ef] shadow-sm transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+        className="group relative flex w-full items-center justify-center gap-3 rounded-xl border border-[#33293c] bg-[#1a151f] hover:bg-[#231c29] hover:border-[#9873a1]/40 px-5 py-3 text-xs sm:text-sm font-medium text-[#f4eff5] shadow-sm transition-all duration-200 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin text-[#c8a97e]" />
-            <span className="text-[#a39e93]">Conectando ao Google...</span>
+            <Loader2 className="h-4 w-4 animate-spin text-[#9873a1]" />
+            <span className="text-[#968a9c]">Conectando ao Google...</span>
           </>
         ) : (
           <>
@@ -79,7 +79,7 @@ export function GoogleSignInButton() {
                 d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.8c-1.1.7-2.5 1.2-4.3 1.2-2.8 0-5.2-1.9-6.1-4.5L2.2 16.7C4 20.3 7.7 23 12 23z"
               />
             </svg>
-            <span className="font-medium tracking-normal text-[#f6f4ef] group-hover:text-white transition-colors">
+            <span className="font-medium tracking-normal text-[#f4eff5] group-hover:text-white transition-colors">
               Continuar com Google Workspace
             </span>
           </>

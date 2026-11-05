@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
   const userName = profile?.full_name || user.email?.split("@")[0] || "Fotógrafo(a)";
 
   return (
-    <div className="min-h-screen bg-[#0e0d0c] text-[#f6f4ef] pb-20 md:pb-12 selection:bg-[#c8a97e]/20 selection:text-[#dfba88]">
+    <div className="min-h-screen bg-[#120e15] text-[#f4eff5] pb-20 md:pb-12 selection:bg-[#9873a1]/20 selection:text-[#bba0c1]">
       <AppNavbar profile={profile} />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">

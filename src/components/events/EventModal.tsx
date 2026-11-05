@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { X, Loader2, Calendar, MapPin, DollarSign, User, FileText, CheckCircle, Trash2 } from "lucide-react";
@@ -92,16 +92,16 @@ export function EventModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="w-full max-w-lg rounded-2xl border border-[#2d2822] bg-[#161513] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#23201c] pb-3">
-          <h3 className="text-sm font-semibold text-[#f6f4ef] flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#c8a97e]" />
+      <div className="w-full max-w-lg rounded-2xl border border-[#33293c] bg-[#1a151f] p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#33293c] pb-3">
+          <h3 className="text-sm font-semibold text-[#f4eff5] flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#9873a1]" />
             {isEditing ? "Editar Detalhes da Captação" : "Nova Captação / Evento"}
           </h3>
           <button
             onClick={onClose}
             type="button"
-            className="rounded-lg p-1 text-[#736e65] hover:text-[#f6f4ef] hover:bg-[#1c1a18] transition-colors"
+            className="rounded-lg p-1 text-[#6e6375] hover:text-[#f4eff5] hover:bg-[#231c29] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -115,16 +115,16 @@ export function EventModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Cliente Vinculado *
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+              <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
               <select
                 required
                 value={formData.clientId}
                 onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
                 {clients.length === 0 ? (
                   <option value="">Nenhum cliente cadastrado ainda</option>
@@ -140,7 +140,7 @@ export function EventModal({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Título da Captação / Projeto *
             </label>
             <input
@@ -149,13 +149,13 @@ export function EventModal({
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="Ex: Ensaio Gestante, Casamento Itally & Erick"
-              className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 px-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
                 Data e Horário *
               </label>
               <div className="relative">
@@ -164,17 +164,17 @@ export function EventModal({
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 px-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors [color-scheme:dark]"
+                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+              <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
                 Valor Cobrado (R$)
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+                <DollarSign className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
                 <input
                   type="number"
                   step="0.01"
@@ -184,38 +184,38 @@ export function EventModal({
                     setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors tabular-nums"
+                  className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors tabular-nums"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Localização / Set
             </label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+              <MapPin className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
               <input
                 type="text"
                 value={formData.location || ""}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="Ex: Praia da Joaquina, Estúdio Central"
-                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Fase da Máquina de Estados (Status)
             </label>
             <div className="relative">
-              <CheckCircle className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+              <CheckCircle className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value as EventStatus })}
-                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
               >
                 <option value="budget_lead">1. Orçamento / Proposta</option>
                 <option value="scheduled">2. Agendado (Fechado)</option>
@@ -227,22 +227,22 @@ export function EventModal({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-[#8e887f] uppercase tracking-wider mb-1">
+            <label className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1">
               Briefing / Observações
             </label>
             <div className="relative">
-              <FileText className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+              <FileText className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
               <textarea
                 rows={2}
                 value={formData.notes || ""}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
-                className="w-full rounded-xl border border-[#26231f] bg-[#121110] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors resize-none"
+                className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#23201c]">
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">
             {isEditing && event ? (
               <button
                 type="button"
@@ -262,14 +262,14 @@ export function EventModal({
                 type="button"
                 onClick={onClose}
                 disabled={loading || isDeleting}
-                className="px-3 py-1.5 rounded-xl border border-[#26231f] bg-[#181715] text-[#8e887f] hover:text-[#f6f4ef] text-xs font-medium transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl border border-[#33293c] bg-[#1a151f] text-[#968a9c] hover:text-[#f4eff5] text-xs font-medium transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading || isDeleting}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>{isEditing ? "Atualizar Evento" : "Criar Evento"}</span>

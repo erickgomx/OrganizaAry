@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -120,12 +120,12 @@ export function DashboardOverview({
   return (
     <div className="space-y-6">
       {/* Top Greeting & Main Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#23201c] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#33293c] pb-5">
         <div className="space-y-0.5">
-          <h2 className="text-xl sm:text-2xl font-semibold text-[#f6f4ef] tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-semibold text-[#f4eff5] tracking-tight">
             Olá, {userName}
           </h2>
-          <p className="text-xs sm:text-sm text-[#8e887f]">
+          <p className="text-xs sm:text-sm text-[#968a9c]">
             Aqui está a sua agenda de ensaios e o que precisa ser entregue.
           </p>
         </div>
@@ -134,16 +134,16 @@ export function DashboardOverview({
           <button
             onClick={() => setIsTaskModalOpen(true)}
             type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#2d2822] bg-[#161513] hover:bg-[#1c1a18] text-[#f6f4ef] text-xs font-medium transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#33293c] bg-[#1a151f] hover:bg-[#231c29] text-[#f4eff5] text-xs font-medium transition-colors"
           >
-            <Plus className="w-3.5 h-3.5 text-[#c8a97e]" />
+            <Plus className="w-3.5 h-3.5 text-[#9873a1]" />
             <span>Nova Tarefa</span>
           </button>
 
           <button
             onClick={() => setIsEventModalOpen(true)}
             type="button"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Novo Trabalho</span>
@@ -156,13 +156,13 @@ export function DashboardOverview({
         {/* Coluna 1: Próximos Ensaios na Agenda */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8e887f] flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#c8a97e]" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#968a9c] flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-[#9873a1]" />
               Próximos Ensaios na Agenda
             </h3>
             <Link
               href="/events"
-              className="text-xs text-[#c8a97e] hover:text-[#dfba88] font-medium flex items-center gap-1 transition-colors"
+              className="text-xs text-[#9873a1] hover:text-[#bba0c1] font-medium flex items-center gap-1 transition-colors"
             >
               <span>Ver todos</span>
               <ArrowRight className="w-3 h-3" />
@@ -170,14 +170,14 @@ export function DashboardOverview({
           </div>
 
           {nextEvents.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-8 text-center space-y-2">
-              <Calendar className="w-6 h-6 text-[#736e65] mx-auto" />
-              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">
+            <div className="rounded-2xl border border-dashed border-[#33293c] bg-[#120e15]/40 p-8 text-center space-y-2">
+              <Calendar className="w-6 h-6 text-[#6e6375] mx-auto" />
+              <p className="text-xs sm:text-sm font-medium text-[#f4eff5]">
                 Nenhum ensaio pendente na agenda.
               </p>
               <button
                 onClick={() => setIsEventModalOpen(true)}
-                className="text-xs text-[#c8a97e] hover:underline font-medium"
+                className="text-xs text-[#9873a1] hover:underline font-medium"
               >
                 + Agendar primeiro trabalho
               </button>
@@ -191,14 +191,14 @@ export function DashboardOverview({
                 return (
                   <div
                     key={ev.id}
-                    className="group rounded-2xl border border-[#26231f] bg-[#151412] p-4 hover:border-[#38332c] hover:bg-[#181715] transition-all shadow-sm flex items-start gap-3.5"
+                    className="group rounded-2xl border border-[#33293c] bg-[#120e15] p-4 hover:border-[#33293c] hover:bg-[#1a151f] transition-all shadow-sm flex items-start gap-3.5"
                   >
                     {/* Clean Date Pill */}
-                    <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-[#1c1a18] border border-[#2e2923] shrink-0 text-center select-none">
-                      <span className="text-sm font-bold text-[#dfba88] tabular-nums leading-none">
+                    <div className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-[#231c29] border border-[#33293c] shrink-0 text-center select-none">
+                      <span className="text-sm font-bold text-[#bba0c1] tabular-nums leading-none">
                         {day}
                       </span>
-                      <span className="text-[9px] font-medium text-[#8e887f] uppercase tracking-wider mt-0.5">
+                      <span className="text-[9px] font-medium text-[#968a9c] uppercase tracking-wider mt-0.5">
                         {month}
                       </span>
                     </div>
@@ -206,17 +206,17 @@ export function DashboardOverview({
                     {/* Shoot details */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-semibold text-sm text-[#f6f4ef] leading-snug truncate">
+                        <h4 className="font-semibold text-sm text-[#f4eff5] leading-snug truncate">
                           {ev.title}
                         </h4>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs font-semibold text-[#dfba88] tabular-nums">
+                          <span className="text-xs font-semibold text-[#bba0c1] tabular-nums">
                             {formatBRL(Number(ev.price))}
                           </span>
                           <button
                             onClick={() => setDeletingEvent({ id: ev.id, title: ev.title })}
                             type="button"
-                            className="p-1 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                            className="p-1 rounded-lg text-[#6e6375] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
                             title="Remover ensaio da agenda"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -224,7 +224,7 @@ export function DashboardOverview({
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-wrap text-xs text-[#8e887f]">
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-[#968a9c]">
                         {ev.client && <span>{ev.client.name}</span>}
                         {phone && (
                           <a
@@ -240,14 +240,14 @@ export function DashboardOverview({
                         )}
                       </div>
 
-                      <div className="flex items-center gap-3 text-[11px] text-[#736e65] pt-0.5">
+                      <div className="flex items-center gap-3 text-[11px] text-[#6e6375] pt-0.5">
                         <span className="flex items-center gap-1 tabular-nums">
-                          <Clock className="w-3 h-3 text-[#736e65]" />
+                          <Clock className="w-3 h-3 text-[#6e6375]" />
                           {time}
                         </span>
                         {ev.location && (
                           <span className="flex items-center gap-1 truncate max-w-[150px]">
-                            <MapPin className="w-3 h-3 text-[#736e65]" />
+                            <MapPin className="w-3 h-3 text-[#6e6375]" />
                             {ev.location}
                           </span>
                         )}
@@ -275,28 +275,28 @@ export function DashboardOverview({
         {/* Coluna 2: Fila de Edição & Checklist */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#8e887f] flex items-center gap-1.5">
-              <CheckSquare className="w-3.5 h-3.5 text-[#c8a97e]" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[#968a9c] flex items-center gap-1.5">
+              <CheckSquare className="w-3.5 h-3.5 text-[#9873a1]" />
               Fila de Edição ({pendingTasks.length})
             </h3>
             <button
               onClick={() => setIsTaskModalOpen(true)}
               type="button"
-              className="text-xs text-[#c8a97e] hover:text-[#dfba88] font-medium transition-colors"
+              className="text-xs text-[#9873a1] hover:text-[#bba0c1] font-medium transition-colors"
             >
               + Adicionar tarefa
             </button>
           </div>
 
           {pendingTasks.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#26231f] bg-[#151412]/40 p-8 text-center space-y-2">
+            <div className="rounded-2xl border border-dashed border-[#33293c] bg-[#120e15]/40 p-8 text-center space-y-2">
               <CheckCircle2 className="w-6 h-6 text-[#9fc193] mx-auto" />
-              <p className="text-xs sm:text-sm font-medium text-[#f6f4ef]">
+              <p className="text-xs sm:text-sm font-medium text-[#f4eff5]">
                 Tudo entregue! Nenhuma edição pendente.
               </p>
               <button
                 onClick={() => setIsTaskModalOpen(true)}
-                className="text-xs text-[#c8a97e] hover:underline font-medium"
+                className="text-xs text-[#9873a1] hover:underline font-medium"
               >
                 + Criar nova tarefa
               </button>
@@ -306,13 +306,13 @@ export function DashboardOverview({
               {pendingTasks.slice(0, 6).map((task) => (
                 <div
                   key={task.id}
-                  className="rounded-xl border border-[#26231f] bg-[#151412] p-3.5 flex items-center justify-between gap-3 hover:border-[#38332c] hover:bg-[#181715] transition-all shadow-sm"
+                  className="rounded-xl border border-[#33293c] bg-[#120e15] p-3.5 flex items-center justify-between gap-3 hover:border-[#33293c] hover:bg-[#1a151f] transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <button
                       onClick={() => handleToggleTask(task.id, task.is_done)}
                       type="button"
-                      className="text-[#736e65] hover:text-[#9fc193] transition-colors shrink-0"
+                      className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
                       title="Marcar como entregue / concluído"
                     >
                       {task.is_done ? (
@@ -322,11 +322,11 @@ export function DashboardOverview({
                       )}
                     </button>
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-[#f6f4ef] truncate">
+                      <p className="text-xs font-medium text-[#f4eff5] truncate">
                         {task.title}
                       </p>
                       {task.event && (
-                        <p className="text-[10px] text-[#8e887f] truncate mt-0.5">
+                        <p className="text-[10px] text-[#968a9c] truncate mt-0.5">
                           {task.event.title}
                         </p>
                       )}
@@ -335,14 +335,14 @@ export function DashboardOverview({
 
                   <div className="flex items-center gap-2 shrink-0">
                     {task.due_date && (
-                      <span className="text-[10px] text-[#8e887f] tabular-nums">
+                      <span className="text-[10px] text-[#968a9c] tabular-nums">
                         Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
                       </span>
                     )}
                     <button
                       onClick={() => setDeletingTask({ id: task.id, title: task.title })}
                       type="button"
-                      className="p-1 rounded-lg text-[#736e65] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
+                      className="p-1 rounded-lg text-[#6e6375] hover:text-[#d48970] hover:bg-[#211615] transition-colors"
                       title="Remover tarefa"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -356,8 +356,8 @@ export function DashboardOverview({
       </div>
 
       {/* Footer Copyright */}
-      <div className="pt-8 text-center border-t border-[#23201c]/60">
-        <p className="text-[11px] text-[#736e65]">
+      <div className="pt-8 text-center border-t border-[#33293c]/60">
+        <p className="text-[11px] text-[#6e6375]">
           &copy; {new Date().getFullYear()} EAREC Produtora Audiovisual &bull; Todos os direitos reservados
         </p>
       </div>

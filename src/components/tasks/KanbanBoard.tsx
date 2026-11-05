@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,8 +57,8 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
       id: "todo",
       title: "A Fazer",
       subtitle: "Backlog & Novas Tarefas",
-      color: "border-[#26231f] bg-[#141311]",
-      accent: "text-[#8e887f] bg-[#1c1a18] border border-[#2d2822]",
+      color: "border-[#33293c] bg-[#120e15]",
+      accent: "text-[#968a9c] bg-[#231c29] border border-[#33293c]",
     },
     {
       id: "in_progress",
@@ -82,7 +82,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
   > = {
     low: {
       label: "Baixa",
-      badgeClass: "bg-[#1a1917] text-[#8e887f] border-[#26231f]",
+      badgeClass: "bg-[#1a151f] text-[#968a9c] border-[#33293c]",
     },
     medium: {
       label: "Média",
@@ -172,20 +172,20 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="flex flex-1 items-center gap-2 max-w-md">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#736e65]" />
+            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-[#6e6375]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar tarefas, descrições ou projetos..."
-              className="w-full rounded-xl border border-[#26231f] bg-[#151412] py-2 pl-9 pr-3 text-xs text-[#f6f4ef] placeholder-[#736e65] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
             />
           </div>
 
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value as TaskPriority | "all")}
-            className="rounded-xl border border-[#26231f] bg-[#151412] py-2 px-3 text-xs text-[#9d978d] focus:border-[#c8a97e]/60 focus:outline-none focus:ring-1 focus:ring-[#c8a97e]/20 transition-colors"
+            className="rounded-xl border border-[#33293c] bg-[#120e15] py-2 px-3 text-xs text-[#968a9c] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors"
           >
             <option value="all">Todas as prioridades</option>
             <option value="urgent">Urgente</option>
@@ -202,7 +202,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
             setIsModalOpen(true);
           }}
           type="button"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#c8a97e] hover:bg-[#dfba88] text-[#121110] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-[0.98]"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Nova Tarefa</span>
@@ -220,17 +220,17 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
               className={`rounded-2xl border ${col.color} p-4 flex flex-col min-h-[500px] space-y-3`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between border-b border-[#23201c] pb-2.5">
+              <div className="flex items-center justify-between border-b border-[#33293c] pb-2.5">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-[#f6f4ef] text-xs sm:text-sm">{col.title}</h3>
+                    <h3 className="font-semibold text-[#f4eff5] text-xs sm:text-sm">{col.title}</h3>
                     <span
                       className={`text-[10px] font-medium px-2 py-0.5 rounded-full tabular-nums ${col.accent}`}
                     >
                       {colTasks.length}
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#736e65] mt-0.5">{col.subtitle}</p>
+                  <p className="text-[11px] text-[#6e6375] mt-0.5">{col.subtitle}</p>
                 </div>
 
                 <button
@@ -240,7 +240,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                     setIsModalOpen(true);
                   }}
                   type="button"
-                  className="p-1.5 rounded-lg text-[#736e65] hover:text-[#f6f4ef] hover:bg-[#1c1a18] transition-colors"
+                  className="p-1.5 rounded-lg text-[#6e6375] hover:text-[#f4eff5] hover:bg-[#231c29] transition-colors"
                   title={`Adicionar tarefa em ${col.title}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -251,7 +251,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
               <div className="space-y-2.5 flex-1 overflow-y-auto">
                 <AnimatePresence>
                   {colTasks.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-[#23201c] p-6 text-center text-xs text-[#736e65]">
+                    <div className="rounded-xl border border-dashed border-[#33293c] p-6 text-center text-xs text-[#6e6375]">
                       Nenhuma tarefa nesta etapa.
                     </div>
                   ) : (
@@ -269,8 +269,8 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                           transition={{ duration: 0.15 }}
                           className={`group rounded-xl border p-3.5 space-y-2.5 shadow-sm transition-all ${
                             task.is_done
-                              ? "border-[#201e1c] bg-[#121110] opacity-70"
-                              : "border-[#26231f] bg-[#161513] hover:border-[#38332c] hover:bg-[#181715]"
+                              ? "border-[#231c29] bg-[#120e15] opacity-70"
+                              : "border-[#33293c] bg-[#1a151f] hover:border-[#33293c] hover:bg-[#1a151f]"
                           }`}
                         >
                           {/* Card Top Row: Checkbox, Title & Menu */}
@@ -279,7 +279,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                               <button
                                 onClick={() => handleToggleDone(task.id, task.is_done)}
                                 type="button"
-                                className="mt-0.5 text-[#736e65] hover:text-[#c8a97e] transition-colors shrink-0"
+                                className="mt-0.5 text-[#6e6375] hover:text-[#9873a1] transition-colors shrink-0"
                                 title={task.is_done ? "Marcar como não concluída" : "Marcar como concluída"}
                               >
                                 {task.is_done ? (
@@ -293,15 +293,15 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                 <h4
                                   className={`text-xs font-medium leading-snug ${
                                     task.is_done
-                                      ? "line-through text-[#736e65]"
-                                      : "text-[#f6f4ef]"
+                                      ? "line-through text-[#6e6375]"
+                                      : "text-[#f4eff5]"
                                   }`}
                                 >
                                   {task.title}
                                 </h4>
 
                                 {task.description && (
-                                  <p className="text-[11px] text-[#8e887f] mt-1 line-clamp-2 leading-relaxed">
+                                  <p className="text-[11px] text-[#968a9c] mt-1 line-clamp-2 leading-relaxed">
                                     {task.description}
                                   </p>
                                 )}
@@ -315,20 +315,20 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                     activeMenuId === task.id ? null : task.id
                                   )
                                 }
-                                className="p-1 rounded text-[#736e65] hover:text-[#f6f4ef] transition-colors"
+                                className="p-1 rounded text-[#6e6375] hover:text-[#f4eff5] transition-colors"
                               >
                                 <MoreVertical className="w-3.5 h-3.5" />
                               </button>
 
                               {activeMenuId === task.id && (
-                                <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#2d2822] bg-[#181715] p-1 shadow-xl text-xs space-y-0.5">
+                                <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
                                   <button
                                     onClick={() => {
                                       setEditingTask(task);
                                       setIsModalOpen(true);
                                       setActiveMenuId(null);
                                     }}
-                                    className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#9d978d] hover:bg-[#221f1c] hover:text-[#f6f4ef] transition-colors"
+                                    className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#968a9c] hover:bg-[#231c29] hover:text-[#f4eff5] transition-colors"
                                   >
                                     <Pencil className="w-3 h-3" />
                                     <span>Editar</span>
@@ -350,7 +350,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
 
                           {/* Event Link Tag */}
                           {task.event && (
-                            <div className="flex items-center gap-1 text-[10px] text-[#c8a97e] bg-[#1a1917] px-2 py-1 rounded-md border border-[#272420] truncate">
+                            <div className="flex items-center gap-1 text-[10px] text-[#9873a1] bg-[#1a151f] px-2 py-1 rounded-md border border-[#33293c] truncate">
                               <Film className="w-3 h-3 shrink-0" />
                               <span className="truncate">
                                 {task.event.title}
@@ -360,7 +360,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                           )}
 
                           {/* Bottom Row: Priority, Due Date & Fast Move Arrows */}
-                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#23201c] text-[10px]">
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#33293c] text-[10px]">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {/* Priority Pill */}
                               <span
@@ -376,7 +376,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                   className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md tabular-nums ${
                                     overdue
                                       ? "bg-[#261514] text-[#e06b63] font-medium border border-[#4a2420]"
-                                      : "text-[#8e887f]"
+                                      : "text-[#968a9c]"
                                   }`}
                                   title={overdue ? "Tarefa Atrasada!" : "Data limite"}
                                 >
@@ -397,7 +397,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                   onClick={() =>
                                     handleMoveColumn(task.id, columns[colIndex - 1].id)
                                   }
-                                  className="p-1 rounded bg-[#1c1a18] text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#23201c] transition-colors"
+                                  className="p-1 rounded bg-[#231c29] text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#33293c] transition-colors"
                                   title={`Mover para ${columns[colIndex - 1].title}`}
                                 >
                                   <ChevronLeft className="w-3 h-3" />
@@ -409,7 +409,7 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                   onClick={() =>
                                     handleMoveColumn(task.id, columns[colIndex + 1].id)
                                   }
-                                  className="p-1 rounded bg-[#1c1a18] text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#23201c] transition-colors"
+                                  className="p-1 rounded bg-[#231c29] text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#33293c] transition-colors"
                                   title={`Mover para ${columns[colIndex + 1].title}`}
                                 >
                                   <ChevronRight className="w-3 h-3" />

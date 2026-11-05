@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -50,7 +50,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
   return (
     <>
       {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-[#23201c] bg-[#121110]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-[#33293c] bg-[#120e15]/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <Image
@@ -61,7 +61,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
               className="h-9 w-9 object-contain drop-shadow-sm transition-transform duration-200 group-hover:scale-105"
               priority
             />
-            <span className="font-semibold text-xs sm:text-sm tracking-tight text-[#f6f4ef] group-hover:text-[#dfba88] transition-colors">
+            <span className="font-semibold text-xs sm:text-sm tracking-tight text-[#f4eff5] group-hover:text-[#bba0c1] transition-colors">
               OrganizaAry
             </span>
           </Link>
@@ -77,11 +77,11 @@ export function AppNavbar({ profile }: AppNavbarProps) {
                   href={item.href}
                   className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-[#1d1b19] text-[#dfba88] border border-[#332e27] shadow-sm"
-                      : "text-[#9d978d] hover:bg-[#171614] hover:text-[#f6f4ef]"
+                      ? "bg-[#231c29] text-[#bba0c1] border border-[#33293c] shadow-sm"
+                      : "text-[#968a9c] hover:bg-[#1a151f] hover:text-[#f4eff5]"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#c8a97e]" : "text-[#807a71]"}`} />
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? "text-[#9873a1]" : "text-[#968a9c]"}`} />
                   <span>{item.label}</span>
                 </Link>
               );
@@ -94,10 +94,10 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             <button
               onClick={() => setIsGuideOpen(true)}
               type="button"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#c8a97e] bg-[#1a1917] hover:bg-[#221f1c] border border-[#2d2822] hover:border-[#c8a97e]/40 transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#9873a1] bg-[#1a151f] hover:bg-[#231c29] border border-[#33293c] hover:border-[#9873a1]/40 transition-all shadow-sm"
               title="Abrir Tutorial e Guia do Usuário"
             >
-              <BookOpen className="w-3.5 h-3.5 text-[#c8a97e]" />
+              <BookOpen className="w-3.5 h-3.5 text-[#9873a1]" />
               <span className="hidden sm:inline">Guia de Uso</span>
             </button>
 
@@ -107,7 +107,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
                 Google Sincronizado
               </span>
             ) : (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#211a14] border border-[#382b21] text-[#c9a77e]">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#211a14] border border-[#382b21] text-[#9873a1]">
                 Google Pendente
               </span>
             )}
@@ -120,10 +120,10 @@ export function AppNavbar({ profile }: AppNavbarProps) {
                   width={28}
                   height={28}
                   unoptimized
-                  className="w-7 h-7 rounded-full border border-[#332e27] object-cover"
+                  className="w-7 h-7 rounded-full border border-[#33293c] object-cover"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-[#1b1917] border border-[#332e27] flex items-center justify-center text-[11px] text-[#dfba88] font-medium">
+                <div className="w-7 h-7 rounded-full bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[11px] text-[#bba0c1] font-medium">
                   {profile?.full_name ? profile.full_name[0] : "O"}
                 </div>
               )}
@@ -134,7 +134,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       </header>
 
       {/* Mobile Bottom Navigation Bar with direct Guide access */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#23201c] bg-[#121110]/95 backdrop-blur-md px-2 pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#33293c] bg-[#120e15]/95 backdrop-blur-md px-2 pb-safe">
         <div className="flex items-center justify-around h-14">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -145,11 +145,11 @@ export function AppNavbar({ profile }: AppNavbarProps) {
                 href={item.href}
                 className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] transition-colors ${
                   isActive
-                    ? "text-[#dfba88] font-semibold"
-                    : "text-[#807a71] hover:text-[#f6f4ef]"
+                    ? "text-[#bba0c1] font-semibold"
+                    : "text-[#968a9c] hover:text-[#f4eff5]"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? "text-[#c8a97e]" : "text-[#807a71]"}`} />
+                <Icon className={`h-4 w-4 ${isActive ? "text-[#9873a1]" : "text-[#968a9c]"}`} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -157,9 +157,9 @@ export function AppNavbar({ profile }: AppNavbarProps) {
           <button
             onClick={() => setIsGuideOpen(true)}
             type="button"
-            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] text-[#c8a97e] hover:text-[#dfba88] transition-colors"
+            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] text-[#9873a1] hover:text-[#bba0c1] transition-colors"
           >
-            <BookOpen className="h-4 w-4 text-[#c8a97e]" />
+            <BookOpen className="h-4 w-4 text-[#9873a1]" />
             <span>Guia</span>
           </button>
         </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -27,11 +27,11 @@ export function SignOutButton() {
       onClick={handleSignOut}
       disabled={loading}
       type="button"
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#8e887f] hover:text-[#f6f4ef] hover:bg-[#1a1917] transition-colors"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#1a151f] transition-colors"
       title="Encerrar sessão"
     >
       {loading ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#c8a97e]" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9873a1]" />
       ) : (
         <LogOut className="w-3.5 h-3.5" />
       )}
