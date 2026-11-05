@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Event, EventStatus, Client, Database } from "@/types/database";
+import { syncEventToGoogleCalendar } from "@/lib/google/calendar";
+import { createGoogleDriveFoldersForEvent } from "@/lib/google/drive";
 
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
@@ -43,11 +45,10 @@ export async function getEvents(statusFilter?: EventStatus): Promise<EventWithCl
   const { data, error } = await query;
 
   if (error) {
-    console.error("Erro ao buscar eventos:", error);
-    return [];
+    throw new Error(error.message);
   }
 
-  return (data as unknown as EventWithClientInfo[]) || [];
+  return (data || []) as unknown as EventWithClientInfo[];
 }
 
 export async function getEventById(id: string): Promise<EventWithClientInfo | null> {
@@ -115,8 +116,26 @@ export async function createEventAction(input: EventInput) {
     return { error: error.message };
   }
 
+  // Automação invisível: Sincroniza silenciosamente com Google Calendar e cria pastas no Drive se conectado
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.google_refresh_token) {
+      const eventInfo = data as unknown as EventWithClientInfo;
+      syncEventToGoogleCalendar(user.id, eventInfo).catch(() => {});
+      createGoogleDriveFoldersForEvent(user.id, eventInfo).catch(() => {});
+    }
+  } catch {
+    // Automação não bloqueia a criação
+  }
+
   revalidatePath("/events");
   revalidatePath("/dashboard");
+  revalidatePath("/tasks");
   revalidatePath(`/clients/${input.clientId}`);
   return { data: data as unknown as EventWithClientInfo };
 }
@@ -155,6 +174,7 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
 
   revalidatePath("/events");
   revalidatePath("/dashboard");
+  revalidatePath("/tasks");
   return { data: data as unknown as EventWithClientInfo };
 }
 
@@ -180,9 +200,31 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
     return { error: error.message };
   }
 
-  // If the event is marked as finished, check if there are tasks to prompt or sync
+  // Automação invisível: ao agendar, sincroniza agenda e drive se ainda não feito
+  if (status === "scheduled") {
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("google_refresh_token")
+        .eq("id", user.id)
+        .single();
+      if (profile?.google_refresh_token) {
+        const ev = data as unknown as EventWithClientInfo;
+        syncEventToGoogleCalendar(user.id, ev).catch(() => {});
+        createGoogleDriveFoldersForEvent(user.id, ev).catch(() => {});
+      }
+    } catch {}
+  }
+
+  // Automação invisível: ao finalizar evento, baixa automaticamente tarefas vinculadas
   if (status === "finished") {
-    // Note: automated task completion can be triggered here or prompted in UI
+    try {
+      await supabase
+        .from("tasks")
+        .update({ is_done: true, status: "done" })
+        .eq("event_id", id)
+        .eq("user_id", user.id);
+    } catch {}
   }
 
   revalidatePath("/events");
@@ -213,5 +255,6 @@ export async function deleteEventAction(id: string) {
 
   revalidatePath("/events");
   revalidatePath("/dashboard");
+  revalidatePath("/tasks");
   return { success: true };
 }

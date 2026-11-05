@@ -166,46 +166,27 @@ export function ClientProfileView({ client, events, stats }: ClientProfileViewPr
         </div>
       </div>
 
-      {/* 360º Financial & Production Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f] block">
-            Faturamento Total
-          </span>
-          <span className="text-xl font-semibold text-[#f6f4ef] mt-1 block tabular-nums">
-            {formatBRL(stats.totalRevenue)}
-          </span>
-          <span className="text-[10px] text-[#736e65] mt-0.5 block">Histórico acumulado</span>
-        </div>
-
-        <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f] block">
-            Recebido / Concluído
-          </span>
-          <span className="text-xl font-semibold text-[#9fc193] mt-1 block tabular-nums">
-            {formatBRL(stats.completedRevenue)}
-          </span>
-          <span className="text-[10px] text-[#736e65] mt-0.5 block">Eventos finalizados</span>
-        </div>
-
-        <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f] block">
-            Em Aberto / Pipeline
-          </span>
-          <span className="text-xl font-semibold text-[#dfba88] mt-1 block tabular-nums">
-            {formatBRL(stats.pendingRevenue)}
-          </span>
-          <span className="text-[10px] text-[#736e65] mt-0.5 block">Captações pendentes</span>
-        </div>
-
-        <div className="rounded-xl border border-[#26231f] bg-[#151412] p-4">
-          <span className="text-[10px] font-medium uppercase tracking-wider text-[#8e887f] block">
-            Total de Captações
-          </span>
-          <span className="text-xl font-semibold text-[#f6f4ef] mt-1 block tabular-nums">
-            {stats.eventsCount}
-          </span>
-          <span className="text-[10px] text-[#736e65] mt-0.5 block">Eventos vinculados</span>
+      {/* Resumo Financeiro Discreto */}
+      <div className="flex flex-wrap items-center justify-between gap-4 py-3 px-4 rounded-xl bg-[#151412] border border-[#26231f] text-xs">
+        <div className="flex items-center gap-6 flex-wrap">
+          <div>
+            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Total de Ensaios</span>
+            <span className="text-sm font-semibold text-[#f6f4ef] tabular-nums">{stats.eventsCount}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Total Faturado</span>
+            <span className="text-sm font-semibold text-[#dfba88] tabular-nums">{formatBRL(stats.totalRevenue)}</span>
+          </div>
+          <div>
+            <span className="text-[10px] text-[#736e65] uppercase font-medium block">Recebido</span>
+            <span className="text-sm font-semibold text-[#9fc193] tabular-nums">{formatBRL(stats.completedRevenue)}</span>
+          </div>
+          {stats.pendingRevenue > 0 && (
+            <div>
+              <span className="text-[10px] text-[#736e65] uppercase font-medium block">A Receber</span>
+              <span className="text-sm font-semibold text-[#d4a359] tabular-nums">{formatBRL(stats.pendingRevenue)}</span>
+            </div>
+          )}
         </div>
       </div>
 

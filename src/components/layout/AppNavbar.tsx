@@ -34,9 +34,8 @@ export function AppNavbar({ profile }: AppNavbarProps) {
 
   const navItems = [
     { href: "/dashboard", label: "Início", icon: LayoutDashboard },
+    { href: "/events", label: "Trabalhos", icon: Calendar },
     { href: "/clients", label: "Clientes", icon: Users },
-    { href: "/events", label: "Eventos", icon: Calendar },
-    { href: "/tasks", label: "Tarefas", icon: KanbanSquare },
   ];
 
   return (
