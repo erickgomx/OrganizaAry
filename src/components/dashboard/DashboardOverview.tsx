@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -17,10 +19,20 @@ import {
 } from "lucide-react";
 import { EventWithClientInfo, deleteEventAction } from "@/actions/events";
 import { TaskWithDetails, toggleTaskDoneAction, deleteTaskAction } from "@/actions/tasks";
-import { EventModal } from "@/components/events/EventModal";
-import { TaskModal } from "@/components/tasks/TaskModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { parseTaskDescription } from "@/lib/checklist";
+
+const EventModal = dynamic(
+  () => import("@/components/events/EventModal").then((m) => m.EventModal),
+  { ssr: false }
+);
+const TaskModal = dynamic(
+  () => import("@/components/tasks/TaskModal").then((m) => m.TaskModal),
+  { ssr: false }
+);
+const ConfirmModal = dynamic(
+  () => import("@/components/ui/ConfirmModal").then((m) => m.ConfirmModal),
+  { ssr: false }
+);
 
 interface DashboardOverviewProps {
   events: EventWithClientInfo[];
@@ -35,6 +47,7 @@ export function DashboardOverview({
   clients,
   userName,
 }: DashboardOverviewProps) {
+  const router = useRouter();
   const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -364,45 +377,53 @@ export function DashboardOverview({
       </div>
 
       {/* Modais */}
-      <EventModal
-        isOpen={isEventModalOpen}
-        onClose={() => setIsEventModalOpen(false)}
-        clients={clients}
-        onSuccess={() => window.location.reload()}
-      />
+      {isEventModalOpen && (
+        <EventModal
+          isOpen={isEventModalOpen}
+          onClose={() => setIsEventModalOpen(false)}
+          clients={clients}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
-      <TaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
-        events={events.map((e) => ({
-          id: e.id,
-          title: e.title,
-          clientName: e.client?.name,
-        }))}
-        onSuccess={() => window.location.reload()}
-      />
+      {isTaskModalOpen && (
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          events={events.map((e) => ({
+            id: e.id,
+            title: e.title,
+            clientName: e.client?.name,
+          }))}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
       {/* Confirm Delete Event Modal */}
-      <ConfirmModal
-        isOpen={!!deletingEvent}
-        onClose={() => setDeletingEvent(null)}
-        isLoading={isDeletingEvent}
-        title="Remover Captação da Agenda"
-        description={`Tem certeza que deseja remover "${deletingEvent?.title}"? Todas as tarefas vinculadas também serão excluídas.`}
-        confirmLabel="Sim, Remover"
-        onConfirm={handleConfirmDeleteEvent}
-      />
+      {deletingEvent && (
+        <ConfirmModal
+          isOpen={!!deletingEvent}
+          onClose={() => setDeletingEvent(null)}
+          isLoading={isDeletingEvent}
+          title="Remover Captação da Agenda"
+          description={`Tem certeza que deseja remover "${deletingEvent?.title}"? Todas as tarefas vinculadas também serão excluídas.`}
+          confirmLabel="Sim, Remover"
+          onConfirm={handleConfirmDeleteEvent}
+        />
+      )}
 
       {/* Confirm Delete Task Modal */}
-      <ConfirmModal
-        isOpen={!!deletingTask}
-        onClose={() => setDeletingTask(null)}
-        isLoading={isDeletingTask}
-        title="Remover Tarefa"
-        description={`Tem certeza que deseja remover a tarefa "${deletingTask?.title}"?`}
-        confirmLabel="Sim, Remover"
-        onConfirm={handleConfirmDeleteTask}
-      />
+      {deletingTask && (
+        <ConfirmModal
+          isOpen={!!deletingTask}
+          onClose={() => setDeletingTask(null)}
+          isLoading={isDeletingTask}
+          title="Remover Tarefa"
+          description={`Tem certeza que deseja remover a tarefa "${deletingTask?.title}"?`}
+          confirmLabel="Sim, Remover"
+          onConfirm={handleConfirmDeleteTask}
+        />
+      )}
     </div>
   );
 }

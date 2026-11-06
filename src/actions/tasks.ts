@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { Task, TaskPriority, TaskStatus, Database } from "@/types/database";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 
@@ -28,14 +28,13 @@ export type TaskWithDetails = Task & {
 };
 
 export async function getTasks(eventId?: string): Promise<TaskWithDetails[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error("Não autenticado.");
   }
+
+  const supabase = await createClient();
 
   let query = supabase
     .from("tasks")
@@ -51,18 +50,14 @@ export async function getTasks(eventId?: string): Promise<TaskWithDetails[]> {
   const { data, error } = await query;
 
   if (error) {
-    console.error("Erro ao buscar tarefas:", error);
-    return [];
+    throw new Error(error.message);
   }
 
-  return (data as unknown as TaskWithDetails[]) || [];
+  return (data || []) as unknown as TaskWithDetails[];
 }
 
 export async function createTaskAction(input: TaskInput) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
@@ -72,10 +67,8 @@ export async function createTaskAction(input: TaskInput) {
     return { error: "O título da tarefa é obrigatório." };
   }
 
-  const status = input.status || "todo";
-  const isDone = status === "done";
+  const supabase = await createClient();
 
-  // Validação BOLA/IDOR: Garantir que a captação vinculada pertence ao usuário autenticado
   if (input.eventId) {
     const { data: eventOwnerCheck, error: eventOwnerError } = await supabase
       .from("events")
@@ -89,6 +82,17 @@ export async function createTaskAction(input: TaskInput) {
     }
   }
 
+  const { data: maxPosData } = await supabase
+    .from("tasks")
+    .select("position")
+    .eq("user_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextPos = (maxPosData?.position ?? -1) + 1;
+  const isDone = input.status === "done";
+
   const { data, error } = await supabase
     .from("tasks")
     .insert({
@@ -97,9 +101,10 @@ export async function createTaskAction(input: TaskInput) {
       title: input.title.trim(),
       description: input.description?.trim() || null,
       priority: input.priority || "medium",
-      status: status,
-      is_done: isDone,
+      status: input.status || "todo",
       due_date: input.dueDate ? new Date(input.dueDate).toISOString() : null,
+      is_done: isDone,
+      position: nextPos,
     })
     .select("*, event:events(id, title, client:clients(id, name))")
     .single();
@@ -109,20 +114,19 @@ export async function createTaskAction(input: TaskInput) {
   }
 
   revalidatePath("/tasks");
+  revalidatePath("/events");
   revalidatePath("/dashboard");
   return { data: data as unknown as TaskWithDetails };
 }
 
 export async function updateTaskAction(id: string, input: Partial<TaskInput>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const payload: TaskUpdate = {};
 
   if (input.title !== undefined) payload.title = input.title.trim();
@@ -164,21 +168,20 @@ export async function updateTaskAction(id: string, input: Partial<TaskInput>) {
   }
 
   revalidatePath("/tasks");
+  revalidatePath("/events");
   revalidatePath("/dashboard");
   return { data: data as unknown as TaskWithDetails };
 }
 
 export async function updateTaskStatusAction(id: string, status: TaskStatus) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
   const isDone = status === "done";
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("tasks")
@@ -196,15 +199,13 @@ export async function updateTaskStatusAction(id: string, status: TaskStatus) {
   }
 
   revalidatePath("/tasks");
+  revalidatePath("/events");
   revalidatePath("/dashboard");
   return { data: data as unknown as TaskWithDetails };
 }
 
 export async function toggleTaskDoneAction(id: string, currentIsDone: boolean) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
@@ -212,6 +213,7 @@ export async function toggleTaskDoneAction(id: string, currentIsDone: boolean) {
 
   const nextIsDone = !currentIsDone;
   const nextStatus: TaskStatus = nextIsDone ? "done" : "todo";
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("tasks")
@@ -229,20 +231,19 @@ export async function toggleTaskDoneAction(id: string, currentIsDone: boolean) {
   }
 
   revalidatePath("/tasks");
+  revalidatePath("/events");
   revalidatePath("/dashboard");
   return { data: data as unknown as TaskWithDetails };
 }
 
 export async function completeAllTasksForEventAction(eventId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("tasks")
     .update({
@@ -263,15 +264,13 @@ export async function completeAllTasksForEventAction(eventId: string) {
 }
 
 export async function deleteTaskAction(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("tasks")
     .delete()
@@ -283,6 +282,7 @@ export async function deleteTaskAction(id: string) {
   }
 
   revalidatePath("/tasks");
+  revalidatePath("/events");
   revalidatePath("/dashboard");
   return { success: true };
 }
@@ -292,15 +292,13 @@ export async function toggleTaskChecklistItemAction(
   itemId: string,
   completed: boolean
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const { data: task, error: fetchError } = await supabase
     .from("tasks")
     .select("id, description")

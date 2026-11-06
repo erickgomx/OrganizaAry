@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   Search,
   UserPlus,
@@ -13,14 +15,22 @@ import {
   Users,
 } from "lucide-react";
 import { ClientWithStats, deleteClientAction } from "@/actions/clients";
-import { ClientModal } from "./ClientModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+
+const ClientModal = dynamic(
+  () => import("./ClientModal").then((m) => m.ClientModal),
+  { ssr: false }
+);
+const ConfirmModal = dynamic(
+  () => import("@/components/ui/ConfirmModal").then((m) => m.ConfirmModal),
+  { ssr: false }
+);
 
 interface ClientsListProps {
   initialClients: ClientWithStats[];
 }
 
 export function ClientsList({ initialClients }: ClientsListProps) {
+  const router = useRouter();
   const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -206,28 +216,32 @@ export function ClientsList({ initialClients }: ClientsListProps) {
       )}
 
       {/* Client Modal */}
-      <ClientModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingClient(null);
-        }}
-        client={editingClient}
-        onSuccess={() => {
-          window.location.reload();
-        }}
-      />
+      {isModalOpen && (
+        <ClientModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingClient(null);
+          }}
+          client={editingClient}
+          onSuccess={() => {
+            router.refresh();
+          }}
+        />
+      )}
 
       {/* Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!deletingClient}
-        onClose={() => setDeletingClient(null)}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-        title="Remover Cliente"
-        description={`Tem certeza que deseja remover o cliente "${deletingClient?.name}"? Todas as captações, reuniões e tarefas vinculadas a este cliente também serão permanentemente excluídas.`}
-        confirmLabel="Sim, Remover"
-      />
+      {deletingClient && (
+        <ConfirmModal
+          isOpen={!!deletingClient}
+          onClose={() => setDeletingClient(null)}
+          onConfirm={handleConfirmDelete}
+          isLoading={isDeleting}
+          title="Remover Cliente"
+          description={`Tem certeza que deseja remover o cliente "${deletingClient?.name}"? Todas as captações, reuniões e tarefas vinculadas a este cliente também serão permanentemente excluídas.`}
+          confirmLabel="Sim, Remover"
+        />
+      )}
     </div>
   );
 }

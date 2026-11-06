@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -26,8 +28,12 @@ import {
   deleteTaskAction,
 } from "@/actions/tasks";
 import { TaskPriority, TaskStatus } from "@/types/database";
-import { TaskModal } from "./TaskModal";
 import { parseTaskDescription } from "@/lib/checklist";
+
+const TaskModal = dynamic(
+  () => import("./TaskModal").then((m) => m.TaskModal),
+  { ssr: false }
+);
 
 interface SimpleEventOption {
   id: string;
@@ -41,6 +47,7 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
+  const router = useRouter();
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
@@ -465,17 +472,19 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
       </div>
 
       {/* Task Modal */}
-      <TaskModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingTask(null);
-        }}
-        task={editingTask}
-        events={events}
-        defaultStatus={modalDefaultStatus}
-        onSuccess={() => window.location.reload()}
-      />
+      {isModalOpen && (
+        <TaskModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingTask(null);
+          }}
+          task={editingTask}
+          events={events}
+          defaultStatus={modalDefaultStatus}
+          onSuccess={() => router.refresh()}
+        />
+      )}
     </div>
   );
 }

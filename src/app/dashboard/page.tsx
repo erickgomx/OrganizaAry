@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser, getAuthenticatedProfile } from "@/lib/supabase/server";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { EventWithClientInfo } from "@/actions/events";
@@ -11,23 +11,17 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  // Fetch concurrently
-  const [profileRes, clientsRes, eventsRes, tasksRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
-      .eq("id", user.id)
-      .single(),
+  const supabase = await createClient();
+
+  // Fetch concurrently in parallel
+  const [profile, clientsRes, eventsRes, tasksRes] = await Promise.all([
+    getAuthenticatedProfile(user.id),
     supabase.from("clients").select("id, name, phone").eq("user_id", user.id),
     supabase
       .from("events")
@@ -41,16 +35,6 @@ export default async function DashboardPage() {
       .order("due_date", { ascending: true, nullsFirst: false }),
   ]);
 
-  const rawProfile = profileRes.data;
-  const profile = rawProfile
-    ? {
-        id: rawProfile.id,
-        email: rawProfile.email,
-        full_name: rawProfile.full_name,
-        avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
-      }
-    : null;
   const clients = (clientsRes.data || []) as { id: string; name: string; phone?: string | null }[];
   const events = (eventsRes.data || []) as unknown as EventWithClientInfo[];
   const tasks = (tasksRes.data || []) as unknown as TaskWithDetails[];

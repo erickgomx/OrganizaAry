@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser, getAuthenticatedProfile } from "@/lib/supabase/server";
 import { getClients } from "@/actions/clients";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { ClientsList } from "@/components/clients/ClientsList";
@@ -11,32 +11,17 @@ export const metadata = {
 };
 
 export default async function ClientsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
-    .eq("id", user.id)
-    .single();
-
-  const profile = rawProfile
-    ? {
-        id: rawProfile.id,
-        email: rawProfile.email,
-        full_name: rawProfile.full_name,
-        avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
-      }
-    : null;
-
-  const clients = await getClients();
+  // Profile and clients fetched concurrently
+  const [profile, clients] = await Promise.all([
+    getAuthenticatedProfile(user.id),
+    getClients(),
+  ]);
 
   return (
     <div className="min-h-screen bg-[#120e15] text-[#f4eff5] pb-20 md:pb-12 selection:bg-[#9873a1]/20 selection:text-[#bba0c1]">

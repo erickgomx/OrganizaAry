@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser, getAuthenticatedProfile } from "@/lib/supabase/server";
 import { getClientById } from "@/actions/clients";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { ClientProfileView } from "@/components/clients/ClientProfileView";
@@ -20,37 +20,23 @@ export async function generateMetadata({ params }: ClientProfilePageProps) {
 }
 
 export default async function ClientProfilePage({ params }: ClientProfilePageProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
   }
 
   const { id } = await params;
-  const clientData = await getClientById(id);
+
+  // React cache() deduplicates getClientById between generateMetadata and ClientProfilePage
+  const [clientData, profile] = await Promise.all([
+    getClientById(id),
+    getAuthenticatedProfile(user.id),
+  ]);
 
   if (!clientData) {
     notFound();
   }
-
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
-    .eq("id", user.id)
-    .single();
-
-  const profile = rawProfile
-    ? {
-        id: rawProfile.id,
-        email: rawProfile.email,
-        full_name: rawProfile.full_name,
-        avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
-      }
-    : null;
 
   return (
     <div className="min-h-screen bg-[#120e15] text-[#f4eff5] pb-20 md:pb-12 selection:bg-[#9873a1]/20 selection:text-[#bba0c1]">

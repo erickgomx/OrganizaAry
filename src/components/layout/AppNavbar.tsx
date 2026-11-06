@@ -3,13 +3,24 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SignOutButton } from "./SignOutButton";
-import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
-import { PrincessWelcomeModal } from "@/components/onboarding/PrincessWelcomeModal";
-import { GoogleDiagnosticModal } from "@/components/google/GoogleDiagnosticModal";
+
+const UserGuideModal = dynamic(
+  () => import("@/components/onboarding/UserGuideModal").then((mod) => mod.UserGuideModal),
+  { ssr: false }
+);
+const PrincessWelcomeModal = dynamic(
+  () => import("@/components/onboarding/PrincessWelcomeModal").then((mod) => mod.PrincessWelcomeModal),
+  { ssr: false }
+);
+const GoogleDiagnosticModal = dynamic(
+  () => import("@/components/google/GoogleDiagnosticModal").then((mod) => mod.GoogleDiagnosticModal),
+  { ssr: false }
+);
 
 export interface SafeNavbarProfile {
   id?: string;
@@ -285,21 +296,28 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       </nav>
 
       {/* Princess First Login Love Note Modal */}
-      <PrincessWelcomeModal
-        isOpen={isLoveNoteOpen}
-        onClose={handleCloseLoveNote}
-      />
+      {isLoveNoteOpen && (
+        <PrincessWelcomeModal
+          isOpen={isLoveNoteOpen}
+          onClose={handleCloseLoveNote}
+        />
+      )}
 
       {/* Re-consultable User Guide Modal */}
-      <UserGuideModal
-        isOpen={isGuideOpen}
-        onClose={() => setIsGuideOpen(false)}
-      />
+      {isGuideOpen && (
+        <UserGuideModal
+          isOpen={isGuideOpen}
+          onClose={() => setIsGuideOpen(false)}
+        />
+      )}
+
       {/* Google Diagnostic Modal */}
-      <GoogleDiagnosticModal
-        isOpen={isDiagnosticOpen}
-        onClose={() => setIsDiagnosticOpen(false)}
-      />
+      {isDiagnosticOpen && (
+        <GoogleDiagnosticModal
+          isOpen={isDiagnosticOpen}
+          onClose={() => setIsDiagnosticOpen(false)}
+        />
+      )}
     </>
   );
 }

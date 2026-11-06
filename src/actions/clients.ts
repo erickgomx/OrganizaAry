@@ -1,7 +1,8 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { Client, Event } from "@/types/database";
 
 export interface ClientInput {
@@ -18,36 +19,40 @@ export interface ClientWithStats extends Client {
 }
 
 export async function getClients(): Promise<ClientWithStats[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error("Não autenticado.");
   }
 
-  const { data: clients, error: clientsError } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("name", { ascending: true });
+  const supabase = await createClient();
 
-  if (clientsError) {
-    console.error("Erro ao buscar clientes:", clientsError);
+  // Parallel fetch: clients and events simultaneously
+  const [clientsRes, eventsRes] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
+    supabase
+      .from("events")
+      .select("client_id, price, status")
+      .eq("user_id", user.id),
+  ]);
+
+  if (clientsRes.error) {
+    console.error("Erro ao buscar clientes:", clientsRes.error);
     return [];
   }
 
-  const { data: events, error: eventsError } = await supabase
-    .from("events")
-    .select("client_id, price, status")
-    .eq("user_id", user.id);
-
-  if (eventsError) {
-    console.error("Erro ao buscar eventos dos clientes:", eventsError);
+  if (eventsRes.error) {
+    console.error("Erro ao buscar eventos dos clientes:", eventsRes.error);
   }
 
-  const eventsByClient = (events || []).reduce<Record<string, { count: number; total: number; completed: number }>>(
+  const clients = clientsRes.data || [];
+  const events = eventsRes.data || [];
+
+  const eventsByClient = events.reduce<Record<string, { count: number; total: number; completed: number }>>(
     (acc, ev) => {
       if (!acc[ev.client_id]) {
         acc[ev.client_id] = { count: 0, total: 0, completed: 0 };
@@ -74,7 +79,7 @@ export async function getClients(): Promise<ClientWithStats[]> {
   });
 }
 
-export async function getClientById(id: string): Promise<{
+export const getClientById = cache(async (id: string): Promise<{
   client: Client;
   events: Event[];
   stats: {
@@ -83,39 +88,41 @@ export async function getClientById(id: string): Promise<{
     pendingRevenue: number;
     eventsCount: number;
   };
-} | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+} | null> => {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error("Não autenticado.");
   }
 
-  const { data: client, error: clientError } = await supabase
-    .from("clients")
-    .select("*")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single();
+  const supabase = await createClient();
 
-  if (clientError || !client) {
+  // Run client and its events concurrently
+  const [clientRes, eventsRes] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("*")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("events")
+      .select("*")
+      .eq("client_id", id)
+      .eq("user_id", user.id)
+      .order("date", { ascending: false }),
+  ]);
+
+  if (clientRes.error || !clientRes.data) {
     return null;
   }
 
-  const { data: events, error: eventsError } = await supabase
-    .from("events")
-    .select("*")
-    .eq("client_id", id)
-    .eq("user_id", user.id)
-    .order("date", { ascending: false });
-
-  if (eventsError) {
-    console.error("Erro ao carregar eventos do cliente:", eventsError);
+  if (eventsRes.error) {
+    console.error("Erro ao carregar eventos do cliente:", eventsRes.error);
   }
 
-  const clientEvents = events || [];
+  const client = clientRes.data;
+  const clientEvents = eventsRes.data || [];
 
   let totalRevenue = 0;
   let completedRevenue = 0;
@@ -141,13 +148,10 @@ export async function getClientById(id: string): Promise<{
       eventsCount: clientEvents.length,
     },
   };
-}
+});
 
 export async function createClientAction(input: ClientInput) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
@@ -157,6 +161,7 @@ export async function createClientAction(input: ClientInput) {
     return { error: "O nome do cliente é obrigatório." };
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
     .insert({
@@ -175,14 +180,12 @@ export async function createClientAction(input: ClientInput) {
 
   revalidatePath("/clients");
   revalidatePath("/dashboard");
+  revalidatePath("/events");
   return { data };
 }
 
 export async function updateClientAction(id: string, input: ClientInput) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
@@ -192,6 +195,7 @@ export async function updateClientAction(id: string, input: ClientInput) {
     return { error: "O nome do cliente é obrigatório." };
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
     .update({
@@ -212,19 +216,18 @@ export async function updateClientAction(id: string, input: ClientInput) {
   revalidatePath("/clients");
   revalidatePath(`/clients/${id}`);
   revalidatePath("/dashboard");
+  revalidatePath("/events");
   return { data };
 }
 
 export async function deleteClientAction(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const { error } = await supabase
     .from("clients")
     .delete()
@@ -237,5 +240,6 @@ export async function deleteClientAction(id: string) {
 
   revalidatePath("/clients");
   revalidatePath("/dashboard");
+  revalidatePath("/events");
   return { success: true };
 }

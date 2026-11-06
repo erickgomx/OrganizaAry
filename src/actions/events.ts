@@ -1,7 +1,8 @@
 "use server";
 
+import { cache } from "react";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { Event, EventStatus, Client, Database } from "@/types/database";
 import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
 
@@ -22,14 +23,13 @@ export type EventWithClientInfo = Event & {
 };
 
 export async function getEvents(statusFilter?: EventStatus): Promise<EventWithClientInfo[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error("Não autenticado.");
   }
+
+  const supabase = await createClient();
 
   let query = supabase
     .from("events")
@@ -50,16 +50,14 @@ export async function getEvents(statusFilter?: EventStatus): Promise<EventWithCl
   return (data || []) as unknown as EventWithClientInfo[];
 }
 
-export async function getEventById(id: string): Promise<EventWithClientInfo | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export const getEventById = cache(async (id: string): Promise<EventWithClientInfo | null> => {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     throw new Error("Não autenticado.");
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("events")
     .select("*, client:clients(*)")
@@ -72,13 +70,10 @@ export async function getEventById(id: string): Promise<EventWithClientInfo | nu
   }
 
   return data as unknown as EventWithClientInfo;
-}
+});
 
 export async function createEventAction(input: EventInput) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
@@ -95,6 +90,8 @@ export async function createEventAction(input: EventInput) {
   if (!input.date) {
     return { error: "A data e horário são obrigatórios." };
   }
+
+  const supabase = await createClient();
 
   // Validação BOLA/IDOR: Garantir que o cliente informado pertence ao usuário autenticado
   const { data: clientOwnerCheck, error: clientOwnerError } = await supabase
@@ -158,15 +155,13 @@ export async function createEventAction(input: EventInput) {
 }
 
 export async function updateEventAction(id: string, input: Partial<EventInput>) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const updatePayload: EventUpdate = {};
 
   if (input.clientId !== undefined) {
@@ -234,15 +229,13 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
 }
 
 export async function updateEventStatusAction(id: string, status: EventStatus) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("events")
     .update({ status })
@@ -290,14 +283,13 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
 }
 
 export async function deleteEventAction(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     return { error: "Não autenticado." };
   }
+
+  const supabase = await createClient();
 
   // Resgata o google_event_id antes da exclusão
   const { data: existingEvent } = await supabase

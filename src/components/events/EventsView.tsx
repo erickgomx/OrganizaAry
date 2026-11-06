@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Plus,
@@ -42,14 +44,27 @@ import {
   toggleTaskChecklistItemAction,
 } from "@/actions/tasks";
 import { EventStatus } from "@/types/database";
-import { EventModal } from "./EventModal";
-import { TaskModal } from "@/components/tasks/TaskModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl } from "@/lib/utils";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 import { createClient } from "@/lib/supabase/client";
-import { GoogleDiagnosticModal } from "@/components/google/GoogleDiagnosticModal";
+
+const EventModal = dynamic(
+  () => import("./EventModal").then((m) => m.EventModal),
+  { ssr: false }
+);
+const TaskModal = dynamic(
+  () => import("@/components/tasks/TaskModal").then((m) => m.TaskModal),
+  { ssr: false }
+);
+const ConfirmModal = dynamic(
+  () => import("@/components/ui/ConfirmModal").then((m) => m.ConfirmModal),
+  { ssr: false }
+);
+const GoogleDiagnosticModal = dynamic(
+  () => import("@/components/google/GoogleDiagnosticModal").then((m) => m.GoogleDiagnosticModal),
+  { ssr: false }
+);
 
 interface EventsViewProps {
   initialEvents: EventWithClientInfo[];
@@ -62,6 +77,7 @@ export function EventsView({
   initialTasks,
   clients,
 }: EventsViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"agenda" | "edicao">("agenda");
   const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
@@ -988,59 +1004,69 @@ export function EventsView({
       )}
 
       {/* Modais */}
-      <EventModal
-        isOpen={isEventModalOpen}
-        onClose={() => {
-          setIsEventModalOpen(false);
-          setEditingEvent(null);
-        }}
-        event={editingEvent}
-        clients={clients}
-        onSuccess={() => window.location.reload()}
-      />
+      {isEventModalOpen && (
+        <EventModal
+          isOpen={isEventModalOpen}
+          onClose={() => {
+            setIsEventModalOpen(false);
+            setEditingEvent(null);
+          }}
+          event={editingEvent}
+          clients={clients}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
-      <TaskModal
-        isOpen={isTaskModalOpen}
-        onClose={() => {
-          setIsTaskModalOpen(false);
-          setEditingTask(null);
-        }}
-        task={editingTask}
-        events={events.map((e) => ({
-          id: e.id,
-          title: e.title,
-          clientName: e.client?.name,
-        }))}
-        onSuccess={() => window.location.reload()}
-      />
+      {isTaskModalOpen && (
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setEditingTask(null);
+          }}
+          task={editingTask}
+          events={events.map((e) => ({
+            id: e.id,
+            title: e.title,
+            clientName: e.client?.name,
+          }))}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
       {/* Confirm Delete Event Modal */}
-      <ConfirmModal
-        isOpen={!!deletingEvent}
-        onClose={() => setDeletingEvent(null)}
-        isLoading={isDeletingEvent}
-        title="Remover Captação"
-        description={`Tem certeza que deseja remover o ensaio "${deletingEvent?.title}"? Todas as tarefas vinculadas a este trabalho também serão excluídas.`}
-        confirmLabel="Sim, Remover"
-        onConfirm={handleConfirmDeleteEvent}
-      />
+      {deletingEvent && (
+        <ConfirmModal
+          isOpen={!!deletingEvent}
+          onClose={() => setDeletingEvent(null)}
+          isLoading={isDeletingEvent}
+          title="Remover Captação"
+          description={`Tem certeza que deseja remover o ensaio "${deletingEvent?.title}"? Todas as tarefas vinculadas a este trabalho também serão excluídas.`}
+          confirmLabel="Sim, Remover"
+          onConfirm={handleConfirmDeleteEvent}
+        />
+      )}
 
       {/* Confirm Delete Task Modal */}
-      <ConfirmModal
-        isOpen={!!deletingTask}
-        onClose={() => setDeletingTask(null)}
-        isLoading={isDeletingTask}
-        title="Remover Tarefa"
-        description={`Tem certeza que deseja excluir a tarefa "${deletingTask?.title}"?`}
-        confirmLabel="Sim, Remover"
-        onConfirm={handleConfirmDeleteTask}
-      />
+      {deletingTask && (
+        <ConfirmModal
+          isOpen={!!deletingTask}
+          onClose={() => setDeletingTask(null)}
+          isLoading={isDeletingTask}
+          title="Remover Tarefa"
+          description={`Tem certeza que deseja excluir a tarefa "${deletingTask?.title}"?`}
+          confirmLabel="Sim, Remover"
+          onConfirm={handleConfirmDeleteTask}
+        />
+      )}
 
       {/* Google Diagnostic Modal */}
-      <GoogleDiagnosticModal
-        isOpen={isDiagnosticOpen}
-        onClose={() => setIsDiagnosticOpen(false)}
-      />
+      {isDiagnosticOpen && (
+        <GoogleDiagnosticModal
+          isOpen={isDiagnosticOpen}
+          onClose={() => setIsDiagnosticOpen(false)}
+        />
+      )}
     </div>
   );
 }

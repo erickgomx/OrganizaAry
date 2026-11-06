@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -20,9 +21,19 @@ import {
 import { Client, Event, EventStatus } from "@/types/database";
 import { deleteClientAction } from "@/actions/clients";
 import { deleteEventAction } from "@/actions/events";
-import { ClientModal } from "./ClientModal";
-import { EventModal } from "@/components/events/EventModal";
-import { ConfirmModal } from "@/components/ui/ConfirmModal";
+
+const ClientModal = dynamic(
+  () => import("./ClientModal").then((m) => m.ClientModal),
+  { ssr: false }
+);
+const EventModal = dynamic(
+  () => import("@/components/events/EventModal").then((m) => m.EventModal),
+  { ssr: false }
+);
+const ConfirmModal = dynamic(
+  () => import("@/components/ui/ConfirmModal").then((m) => m.ConfirmModal),
+  { ssr: false }
+);
 
 interface ClientProfileViewProps {
   client: Client;
@@ -301,63 +312,71 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
       </div>
 
       {/* Edit Client Modal */}
-      <ClientModal
-        isOpen={isEditClientOpen}
-        onClose={() => setIsEditClientOpen(false)}
-        client={client}
-        onSuccess={() => window.location.reload()}
-      />
+      {isEditClientOpen && (
+        <ClientModal
+          isOpen={isEditClientOpen}
+          onClose={() => setIsEditClientOpen(false)}
+          client={client}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
       {/* New Event Modal for this client */}
-      <EventModal
-        isOpen={isNewEventOpen}
-        onClose={() => setIsNewEventOpen(false)}
-        defaultClientId={client.id}
-        clients={[{ id: client.id, name: client.name }]}
-        onSuccess={() => window.location.reload()}
-      />
+      {isNewEventOpen && (
+        <EventModal
+          isOpen={isNewEventOpen}
+          onClose={() => setIsNewEventOpen(false)}
+          defaultClientId={client.id}
+          clients={[{ id: client.id, name: client.name }]}
+          onSuccess={() => router.refresh()}
+        />
+      )}
 
       {/* Confirm Delete Client Modal */}
-      <ConfirmModal
-        isOpen={isDeleteClientModalOpen}
-        onClose={() => setIsDeleteClientModalOpen(false)}
-        isLoading={isDeletingClient}
-        title="Remover Cliente"
-        description={`Tem certeza que deseja remover o cliente "${client.name}"? Todas as captações, reuniões e tarefas vinculadas a ele também serão excluídas.`}
-        confirmLabel="Sim, Remover Cliente"
-        onConfirm={async () => {
-          setIsDeletingClient(true);
-          const res = await deleteClientAction(client.id);
-          setIsDeletingClient(false);
-          if (res.success) {
-            router.push("/clients");
-          } else {
-            alert("Erro ao excluir cliente: " + res.error);
-          }
-        }}
-      />
+      {isDeleteClientModalOpen && (
+        <ConfirmModal
+          isOpen={isDeleteClientModalOpen}
+          onClose={() => setIsDeleteClientModalOpen(false)}
+          isLoading={isDeletingClient}
+          title="Remover Cliente"
+          description={`Tem certeza que deseja remover o cliente "${client.name}"? Todas as captações, reuniões e tarefas vinculadas a ele também serão excluídas.`}
+          confirmLabel="Sim, Remover Cliente"
+          onConfirm={async () => {
+            setIsDeletingClient(true);
+            const res = await deleteClientAction(client.id);
+            setIsDeletingClient(false);
+            if (res.success) {
+              router.push("/clients");
+            } else {
+              alert("Erro ao excluir cliente: " + res.error);
+            }
+          }}
+        />
+      )}
 
       {/* Confirm Delete Event Modal */}
-      <ConfirmModal
-        isOpen={!!deletingEvent}
-        onClose={() => setDeletingEvent(null)}
-        isLoading={isDeletingEvent}
-        title="Remover Captação"
-        description={`Tem certeza que deseja remover "${deletingEvent?.title}"? As tarefas vinculadas a este projeto também serão excluídas.`}
-        confirmLabel="Sim, Remover"
-        onConfirm={async () => {
-          if (!deletingEvent) return;
-          setIsDeletingEvent(true);
-          const res = await deleteEventAction(deletingEvent.id);
-          setIsDeletingEvent(false);
-          if (res.success) {
-            setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
-            setDeletingEvent(null);
-          } else {
-            alert("Erro ao excluir captação: " + res.error);
-          }
-        }}
-      />
+      {deletingEvent && (
+        <ConfirmModal
+          isOpen={!!deletingEvent}
+          onClose={() => setDeletingEvent(null)}
+          isLoading={isDeletingEvent}
+          title="Remover Captação"
+          description={`Tem certeza que deseja remover "${deletingEvent?.title}"? As tarefas vinculadas a este projeto também serão excluídas.`}
+          confirmLabel="Sim, Remover"
+          onConfirm={async () => {
+            if (!deletingEvent) return;
+            setIsDeletingEvent(true);
+            const res = await deleteEventAction(deletingEvent.id);
+            setIsDeletingEvent(false);
+            if (res.success) {
+              setEvents((prev) => prev.filter((e) => e.id !== deletingEvent.id));
+              setDeletingEvent(null);
+            } else {
+              alert("Erro ao excluir captação: " + res.error);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

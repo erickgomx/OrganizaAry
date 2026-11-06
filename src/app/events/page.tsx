@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthenticatedUser, getAuthenticatedProfile } from "@/lib/supabase/server";
 import { getEvents } from "@/actions/events";
 import { getClients } from "@/actions/clients";
 import { getTasks } from "@/actions/tasks";
@@ -12,32 +12,15 @@ export const metadata = {
 };
 
 export default async function EventsPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: rawProfile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
-    .eq("id", user.id)
-    .single();
-
-  const profile = rawProfile
-    ? {
-        id: rawProfile.id,
-        email: rawProfile.email,
-        full_name: rawProfile.full_name,
-        avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
-      }
-    : null;
-
-  const [events, clients, tasks] = await Promise.all([
+  // All 4 fetches run in parallel with zero waterfall
+  const [profile, events, clients, tasks] = await Promise.all([
+    getAuthenticatedProfile(user.id),
     getEvents(),
     getClients(),
     getTasks(),

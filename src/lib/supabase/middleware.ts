@@ -7,6 +7,18 @@ export async function updateSession(request: NextRequest) {
   });
 
   try {
+    const pathname = request.nextUrl.pathname;
+    const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|map|json)$/i.test(pathname);
+    const isPublicAsset =
+      pathname.startsWith("/_next") ||
+      pathname === "/favicon.ico" ||
+      isStaticFile;
+
+    // Fast-path: Skip Supabase auth calls completely for static assets & internal Next.js requests
+    if (isPublicAsset) {
+      return supabaseResponse;
+    }
+
     // Support all Vercel + Supabase integration naming variations
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -19,6 +31,24 @@ export async function updateSession(request: NextRequest) {
       return supabaseResponse;
     }
 
+    const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+    const allCookies = request.cookies.getAll();
+    const hasAuthCookie = allCookies.some(
+      (c) => c.name.startsWith("sb-") || c.name.includes("auth-token")
+    );
+
+    // Fast-path: If user has no auth cookie and is on an auth route, no remote call needed
+    if (!hasAuthCookie && isAuthRoute) {
+      return supabaseResponse;
+    }
+
+    // Fast-path: If user has no auth cookie and is requesting a protected route, redirect immediately
+    if (!hasAuthCookie && !isAuthRoute) {
+      const loginUrl = new URL("/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // User has auth cookies: instantiate client to validate and refresh session
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {
@@ -40,16 +70,8 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    const pathname = request.nextUrl.pathname;
-    const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
-    const isStaticFile = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|map)$/i.test(pathname);
-    const isPublicAsset =
-      pathname.startsWith("/_next") ||
-      pathname === "/favicon.ico" ||
-      isStaticFile;
-
-    // If user is not authenticated and trying to access a protected app route
-    if (!user && !isAuthRoute && !isPublicAsset) {
+    // If session expired or invalid and trying to access a protected app route
+    if (!user && !isAuthRoute) {
       const loginUrl = new URL("/login", request.url);
       return NextResponse.redirect(loginUrl);
     }
