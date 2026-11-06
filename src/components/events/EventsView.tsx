@@ -21,8 +21,13 @@ import {
   ChevronUp,
   RotateCw,
   Loader2,
+  CalendarX,
 } from "lucide-react";
-import { syncCalendarAction, generateMeetAction } from "@/actions/google";
+import {
+  syncCalendarAction,
+  generateMeetAction,
+  removeFromCalendarAction,
+} from "@/actions/google";
 import {
   EventWithClientInfo,
   updateEventStatusAction,
@@ -70,6 +75,7 @@ export function EventsView({
   const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [expandedTaskChecklists, setExpandedTaskChecklists] = useState<Record<string, boolean>>({});
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+  const [removingCalendarId, setRemovingCalendarId] = useState<string | null>(null);
   const [generatingMeetId, setGeneratingMeetId] = useState<string | null>(null);
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [syncNotice, setSyncNotice] = useState<{
@@ -142,6 +148,40 @@ export function EventsView({
       });
     } finally {
       setSyncingEventId(null);
+    }
+  };
+
+  const handleRemoveFromCalendar = async (eventId: string) => {
+    setRemovingCalendarId(eventId);
+    setSyncNotice(null);
+    try {
+      const res = await removeFromCalendarAction(eventId);
+      if (res.success) {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventId ? { ...ev, google_event_id: null } : ev
+          )
+        );
+        setSyncNotice({
+          type: "success",
+          message: "Ensaio removido da Google Agenda com sucesso.",
+        });
+      } else {
+        setSyncNotice({
+          type: "error",
+          message: res.error || "Não foi possível remover da Google Agenda.",
+        });
+      }
+    } catch (err) {
+      setSyncNotice({
+        type: "error",
+        message:
+          err instanceof Error
+            ? err.message
+            : "Erro ao remover ensaio da Google Agenda.",
+      });
+    } finally {
+      setRemovingCalendarId(null);
     }
   };
 
@@ -560,7 +600,7 @@ export function EventsView({
                         </button>
 
                         {activeMenuId === ev.id && (
-                          <div className="absolute right-0 top-8 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
+                          <div className="absolute right-0 top-8 z-20 w-36 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
                             <button
                               onClick={() => {
                                 setEditingEvent(ev);
@@ -572,6 +612,19 @@ export function EventsView({
                               <Pencil className="w-3 h-3" />
                               <span>Editar</span>
                             </button>
+                            {ev.google_event_id && (
+                              <button
+                                onClick={() => {
+                                  setActiveMenuId(null);
+                                  handleRemoveFromCalendar(ev.id);
+                                }}
+                                disabled={removingCalendarId === ev.id}
+                                className="flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-[#d48970] hover:bg-[#261714] transition-colors"
+                              >
+                                <CalendarX className="w-3 h-3" />
+                                <span>Remover da Agenda</span>
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 setActiveMenuId(null);
@@ -642,7 +695,7 @@ export function EventsView({
                             <button
                               type="button"
                               onClick={() => handleSyncCalendar(ev.id)}
-                              disabled={syncingEventId === ev.id}
+                              disabled={syncingEventId === ev.id || removingCalendarId === ev.id}
                               className="p-1 rounded-lg text-[#6e6375] hover:text-[#9fc193] hover:bg-[#1a151f] transition-colors"
                               title="Re-sincronizar dados deste ensaio com a Google Agenda"
                             >
@@ -652,12 +705,25 @@ export function EventsView({
                                 <RotateCw className="w-3 h-3" />
                               )}
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveFromCalendar(ev.id)}
+                              disabled={syncingEventId === ev.id || removingCalendarId === ev.id}
+                              className="p-1 rounded-lg text-[#6e6375] hover:text-[#d48970] hover:bg-[#261714] transition-colors"
+                              title="Remover este ensaio da Google Agenda"
+                            >
+                              {removingCalendarId === ev.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-[#d48970]" />
+                              ) : (
+                                <CalendarX className="w-3 h-3" />
+                              )}
+                            </button>
                           </div>
                         ) : (
                           <button
                             type="button"
                             onClick={() => handleSyncCalendar(ev.id)}
-                            disabled={syncingEventId === ev.id}
+                            disabled={syncingEventId === ev.id || removingCalendarId === ev.id}
                             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a151f] text-[#ffb066] border border-[#ff9e3b]/30 hover:border-[#ff9e3b]/60 text-[11px] font-medium transition-colors cursor-pointer"
                             title="Enviar e sincronizar este ensaio na Google Agenda"
                           >

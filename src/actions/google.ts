@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { google } from "googleapis";
 import { createClient } from "@/lib/supabase/server";
 import { getEventById } from "./events";
-import { syncEventToGoogleCalendar } from "@/lib/google/calendar";
+import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
 import { createGoogleMeetForEvent } from "@/lib/google/meet";
 import { getAuthenticatedGoogleClient } from "@/lib/google/auth";
 
@@ -58,7 +58,7 @@ export async function syncCalendarAction(eventId: string): Promise<GoogleSyncRes
       .from("profiles")
       .select("google_refresh_token, google_access_token")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!profile?.google_refresh_token && !profile?.google_access_token) {
       return {
@@ -102,7 +102,7 @@ export async function generateMeetAction(eventId: string): Promise<GoogleMeetRes
       .from("profiles")
       .select("google_refresh_token, google_access_token")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!profile?.google_refresh_token && !profile?.google_access_token) {
       return {
@@ -127,6 +127,52 @@ export async function generateMeetAction(eventId: string): Promise<GoogleMeetRes
       err instanceof Error
         ? err.message
         : "Erro ao gerar link do Google Meet. Verifique suas permissões do Google.";
+    return { success: false, error: message };
+  }
+}
+
+export async function removeFromCalendarAction(
+  eventId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Não autenticado." };
+    }
+
+    const event = await getEventById(eventId);
+    if (!event) {
+      return { success: false, error: "Captação não encontrada." };
+    }
+
+    // Se o evento possuir ID da agenda do Google, tenta remover lá
+    if (event.google_event_id) {
+      await deleteGoogleCalendarEvent(user.id, event.google_event_id);
+    }
+
+    // Desvincula na tabela 'events' do Supabase
+    const { error: updateError } = await supabase
+      .from("events")
+      .update({ google_event_id: null })
+      .eq("id", eventId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    revalidatePath("/events");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (err: unknown) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Erro ao desvincular evento da Google Agenda.";
     return { success: false, error: message };
   }
 }

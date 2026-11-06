@@ -134,7 +134,7 @@ export async function createEventAction(input: EventInput) {
       .from("profiles")
       .select("google_refresh_token, google_access_token")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (profile?.google_refresh_token || profile?.google_access_token) {
       const syncRes = await syncEventToGoogleCalendar(user.id, syncedEventData);
@@ -209,7 +209,7 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
       .from("profiles")
       .select("google_refresh_token, google_access_token")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (
       (profile?.google_refresh_token || profile?.google_access_token) &&
@@ -262,7 +262,7 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
         .from("profiles")
         .select("google_refresh_token, google_access_token")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
       if (profile?.google_refresh_token || profile?.google_access_token) {
         const ev = data as unknown as EventWithClientInfo;
         await syncEventToGoogleCalendar(user.id, ev);

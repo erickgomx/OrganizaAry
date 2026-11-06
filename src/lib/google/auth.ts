@@ -40,7 +40,7 @@ export async function isUserGoogleConnected(userId: string): Promise<boolean> {
       .from("profiles")
       .select("google_refresh_token, google_access_token")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     return Boolean(profile?.google_refresh_token || profile?.google_access_token);
   } catch {
