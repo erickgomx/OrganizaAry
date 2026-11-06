@@ -42,6 +42,7 @@ import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl } from "@/lib/utils";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 import { createClient } from "@/lib/supabase/client";
+import { GoogleDiagnosticModal } from "@/components/google/GoogleDiagnosticModal";
 
 interface EventsViewProps {
   initialEvents: EventWithClientInfo[];
@@ -70,6 +71,7 @@ export function EventsView({
   const [expandedTaskChecklists, setExpandedTaskChecklists] = useState<Record<string, boolean>>({});
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
   const [generatingMeetId, setGeneratingMeetId] = useState<string | null>(null);
+  const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const [syncNotice, setSyncNotice] = useState<{
     type: "success" | "error";
     message: string;
@@ -457,6 +459,15 @@ export function EventsView({
                 className="px-2.5 py-1 rounded-lg bg-[#9873a1] text-[#120e15] font-semibold text-[11px] hover:bg-[#bba0c1] transition-all cursor-pointer shadow-sm"
               >
                 Conectar Google Agenda Agora
+              </button>
+            )}
+            {syncNotice.type === "error" && (
+              <button
+                type="button"
+                onClick={() => setIsDiagnosticOpen(true)}
+                className="px-2 py-0.5 rounded-lg border border-red-800/60 bg-red-950/40 text-red-200 text-[11px] hover:bg-red-900/40 transition-colors cursor-pointer"
+              >
+                Ver Diagnóstico
               </button>
             )}
           </div>
@@ -931,6 +942,12 @@ export function EventsView({
         description={`Tem certeza que deseja excluir a tarefa "${deletingTask?.title}"?`}
         confirmLabel="Sim, Remover"
         onConfirm={handleConfirmDeleteTask}
+      />
+
+      {/* Google Diagnostic Modal */}
+      <GoogleDiagnosticModal
+        isOpen={isDiagnosticOpen}
+        onClose={() => setIsDiagnosticOpen(false)}
       />
     </div>
   );

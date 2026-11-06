@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SignOutButton } from "./SignOutButton";
 import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
 import { PrincessWelcomeModal } from "@/components/onboarding/PrincessWelcomeModal";
+import { GoogleDiagnosticModal } from "@/components/google/GoogleDiagnosticModal";
 
 export interface SafeNavbarProfile {
   id?: string;
@@ -27,6 +28,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
   const pathname = usePathname();
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isLoveNoteOpen, setIsLoveNoteOpen] = useState(false);
+  const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
   const isGoogleConnected = profile?.hasGoogleSync ?? Boolean(profile?.google_refresh_token);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
 
@@ -220,6 +222,15 @@ export function AppNavbar({ profile }: AppNavbarProps) {
 
             )}
 
+            <button
+              type="button"
+              onClick={() => setIsDiagnosticOpen(true)}
+              className="p-1.5 rounded-lg text-[#6e6375] hover:text-[#bba0c1] hover:bg-[#1a151f] border border-transparent hover:border-[#33293c] transition-all cursor-pointer"
+              title="Diagnóstico da integração com o Google"
+            >
+              <Activity className="w-3.5 h-3.5 text-[#9873a1]" />
+            </button>
+
             <div className="flex items-center gap-2">
               {profile?.avatar_url ? (
                 <Image
@@ -283,6 +294,11 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       <UserGuideModal
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
+      />
+      {/* Google Diagnostic Modal */}
+      <GoogleDiagnosticModal
+        isOpen={isDiagnosticOpen}
+        onClose={() => setIsDiagnosticOpen(false)}
       />
     </>
   );
