@@ -19,7 +19,10 @@ import {
   ListChecks,
   ChevronDown,
   ChevronUp,
+  RotateCw,
+  Loader2,
 } from "lucide-react";
+import { syncCalendarAction, generateMeetAction } from "@/actions/google";
 import {
   EventWithClientInfo,
   updateEventStatusAction,
@@ -64,6 +67,71 @@ export function EventsView({
   const [deletingTask, setDeletingTask] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [expandedTaskChecklists, setExpandedTaskChecklists] = useState<Record<string, boolean>>({});
+  const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
+  const [generatingMeetId, setGeneratingMeetId] = useState<string | null>(null);
+  const [syncNotice, setSyncNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const handleSyncCalendar = async (eventId: string) => {
+    setSyncingEventId(eventId);
+    setSyncNotice(null);
+    try {
+      const res = await syncCalendarAction(eventId);
+      if (res.success) {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventId ? { ...ev, google_event_id: res.googleEventId } : ev
+          )
+        );
+        setSyncNotice({
+          type: "success",
+          message: "Ensaio sincronizado com sucesso no Google Agenda!",
+        });
+      } else {
+        setSyncNotice({
+          type: "error",
+          message: res.error,
+        });
+      }
+    } catch (err) {
+      setSyncNotice({
+        type: "error",
+        message: err instanceof Error ? err.message : "Erro ao sincronizar com Google Agenda.",
+      });
+    } finally {
+      setSyncingEventId(null);
+    }
+  };
+
+  const handleGenerateMeet = async (eventId: string) => {
+    setGeneratingMeetId(eventId);
+    setSyncNotice(null);
+    try {
+      const res = await generateMeetAction(eventId);
+      if (res.success) {
+        setEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === eventId ? { ...ev, meet_link: res.meetLink } : ev
+          )
+        );
+        setSyncNotice({
+          type: "success",
+          message: "Link da sala Google Meet criado com sucesso!",
+        });
+      } else {
+        setSyncNotice({
+          type: "error",
+          message: res.error,
+        });
+      }
+    } catch (err) {
+      setSyncNotice({
+        type: "error",
+        message: err instanceof Error ? err.message : "Erro ao gerar sala do Google Meet.",
+      });
+    } finally {
+      setGeneratingMeetId(null);
+    }
+  };
 
   const toggleChecklistExpand = (taskId: string) => {
     setExpandedTaskChecklists((prev) => ({
@@ -331,6 +399,25 @@ export function EventsView({
         </div>
       </div>
 
+      {syncNotice && (
+        <div
+          className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-all ${
+            syncNotice.type === "success"
+              ? "bg-[#162017] border-[#273829] text-[#9fc193]"
+              : "bg-red-950/30 border-red-900/40 text-red-300"
+          }`}
+        >
+          <span>{syncNotice.message}</span>
+          <button
+            type="button"
+            onClick={() => setSyncNotice(null)}
+            className="text-[11px] underline opacity-80 hover:opacity-100 ml-3"
+          >
+            Fechar
+          </button>
+        </div>
+      )}
+
       {/* View 1: Agenda de Ensaios */}
       {activeTab === "agenda" && (
         <div>
@@ -474,9 +561,54 @@ export function EventsView({
                         </span>
                       )}
 
-                      {/* Subtle Google Links (Only when ready) */}
-                      <div className="flex items-center gap-2">
-                        {sanitizeExternalUrl(ev.meet_link) && (
+                      {/* Google Actions (Calendar & Meet) */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Google Calendar Status / Action */}
+                        {ev.google_event_id ? (
+                          <div className="inline-flex items-center gap-1">
+                            <a
+                              href="https://calendar.google.com/calendar/u/0/r"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#162017] text-[#9fc193] border border-[#273829] hover:border-[#9fc193]/40 text-[11px] font-medium transition-colors"
+                              title="Evento sincronizado na Google Agenda (clique para abrir)"
+                            >
+                              <Calendar className="w-3 h-3 text-[#82af74]" />
+                              <span>Na Agenda</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleSyncCalendar(ev.id)}
+                              disabled={syncingEventId === ev.id}
+                              className="p-1 rounded-lg text-[#6e6375] hover:text-[#9fc193] hover:bg-[#1a151f] transition-colors"
+                              title="Re-sincronizar dados deste ensaio com a Google Agenda"
+                            >
+                              {syncingEventId === ev.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-[#9fc193]" />
+                              ) : (
+                                <RotateCw className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSyncCalendar(ev.id)}
+                            disabled={syncingEventId === ev.id}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a151f] text-[#ffb066] border border-[#ff9e3b]/30 hover:border-[#ff9e3b]/60 text-[11px] font-medium transition-colors cursor-pointer"
+                            title="Enviar e sincronizar este ensaio na Google Agenda"
+                          >
+                            {syncingEventId === ev.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-[#ffb066]" />
+                            ) : (
+                              <Calendar className="w-3 h-3 text-[#ff9e3b]" />
+                            )}
+                            <span>+ Agenda</span>
+                          </button>
+                        )}
+
+                        {/* Google Meet Button */}
+                        {sanitizeExternalUrl(ev.meet_link) ? (
                           <a
                             href={sanitizeExternalUrl(ev.meet_link)}
                             target="_blank"
@@ -487,6 +619,21 @@ export function EventsView({
                             <Video className="w-3 h-3" />
                             <span>Meet</span>
                           </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateMeet(ev.id)}
+                            disabled={generatingMeetId === ev.id}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#1a151f] text-[#6e6375] hover:text-[#f4eff5] border border-[#33293c] hover:border-[#968a9c]/30 text-[11px] transition-colors"
+                            title="Criar sala do Google Meet para alinhamento deste projeto"
+                          >
+                            {generatingMeetId === ev.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin text-[#6e6375]" />
+                            ) : (
+                              <Video className="w-3 h-3" />
+                            )}
+                            <span>+ Meet</span>
+                          </button>
                         )}
                       </div>
                     </div>

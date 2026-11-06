@@ -293,8 +293,8 @@ export function UserGuideModal({ isOpen, onClose, defaultTab = "guide" }: UserGu
       ],
       stepByStep: [
         "Ao fazer login com o Google, conceda as permissões de calendário solicitadas.",
-        "Confira o selo 'Google Sincronizado' no topo da barra de navegação.",
-        "Se aparecer 'Google Pendente', basta sair e entrar de novo para renovar a autorização de forma rápida.",
+        "Confira o selo 'Google Agenda Ativo' no topo da barra de navegação.",
+        "Se o botão 'Conectar Agenda' estiver visível, basta clicar nele a qualquer momento para autorizar o acesso.",
       ],
       tip: "A sincronização com o Google Calendar evita choque de datas e mantém seus horários de captação sempre visíveis no celular.",
     },

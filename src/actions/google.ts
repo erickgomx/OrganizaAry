@@ -8,11 +8,38 @@ import { createGoogleMeetForEvent } from "@/lib/google/meet";
 
 export type GoogleSyncResult =
   | { success: true; googleEventId: string; htmlLink?: string | null }
-  | { success: false; error: string };
+  | { success: false; error: string; requiresAuth?: boolean };
 
 export type GoogleMeetResult =
   | { success: true; meetLink: string }
-  | { success: false; error: string };
+  | { success: false; error: string; requiresAuth?: boolean };
+
+export async function getGoogleStatusAction(): Promise<{
+  isConnected: boolean;
+  email?: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return { isConnected: false };
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token, email")
+      .eq("id", user.id)
+      .single();
+
+    return {
+      isConnected: Boolean(profile?.google_refresh_token || profile?.google_access_token),
+      email: profile?.email || user.email,
+    };
+  } catch {
+    return { isConnected: false };
+  }
+}
 
 export async function syncCalendarAction(eventId: string): Promise<GoogleSyncResult> {
   try {
@@ -23,6 +50,20 @@ export async function syncCalendarAction(eventId: string): Promise<GoogleSyncRes
 
     if (!user) {
       return { success: false, error: "Não autenticado." };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.google_refresh_token && !profile?.google_access_token) {
+      return {
+        success: false,
+        error: "Google Agenda desconectado. Conecte sua conta do Google na barra superior para sincronizar.",
+        requiresAuth: true,
+      };
     }
 
     const event = await getEventById(eventId);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X, Loader2, Calendar, MapPin, User, FileText, CheckCircle, Trash2, ChevronDown } from "lucide-react";
 import { createEventAction, updateEventAction, deleteEventAction, EventInput, EventWithClientInfo } from "@/actions/events";
 import { EventStatus } from "@/types/database";
@@ -332,6 +332,11 @@ export function EventModal({
               placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
               className="w-full min-h-[75px] rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
             />
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#120e15]/60 border border-[#33293c] text-[11px] text-[#968a9c]">
+            <Calendar className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+            <span>Sincroniza data, local e cliente automaticamente na sua Google Agenda ao salvar.</span>
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">

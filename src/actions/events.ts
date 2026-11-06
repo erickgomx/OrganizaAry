@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Event, EventStatus, Client, Database } from "@/types/database";
-import { syncEventToGoogleCalendar } from "@/lib/google/calendar";
+import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
 
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
@@ -127,27 +127,34 @@ export async function createEventAction(input: EventInput) {
     return { error: error.message };
   }
 
-  // Automação invisível: Sincroniza silenciosamente com Google Calendar e cria pastas no Drive se conectado
+  // Automação: Sincroniza com Google Calendar se conectado
+  let syncedEventData = data as unknown as EventWithClientInfo;
   try {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("google_refresh_token")
+      .select("google_refresh_token, google_access_token")
       .eq("id", user.id)
       .single();
 
-    if (profile?.google_refresh_token) {
-      const eventInfo = data as unknown as EventWithClientInfo;
-      syncEventToGoogleCalendar(user.id, eventInfo).catch(() => {});
+    if (profile?.google_refresh_token || profile?.google_access_token) {
+      const syncRes = await syncEventToGoogleCalendar(user.id, syncedEventData);
+      if (syncRes?.googleEventId) {
+        syncedEventData = {
+          ...syncedEventData,
+          google_event_id: syncRes.googleEventId,
+        };
+      }
     }
-  } catch {
-    // Automação não bloqueia a criação
+  } catch (syncErr) {
+    console.error("Aviso: Sincronização inicial com Google Calendar não concluída:", syncErr);
+    // Não bloqueia a criação do evento no banco
   }
 
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
   revalidatePath(`/clients/${input.clientId}`);
-  return { data: data as unknown as EventWithClientInfo };
+  return { data: syncedEventData };
 }
 
 export async function updateEventAction(id: string, input: Partial<EventInput>) {
@@ -195,10 +202,35 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
     return { error: error.message };
   }
 
+  // Atualiza no Google Calendar se o evento já estava sincronizado ou se tem data/horário alterado
+  let updatedEventInfo = data as unknown as EventWithClientInfo;
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", user.id)
+      .single();
+
+    if (
+      (profile?.google_refresh_token || profile?.google_access_token) &&
+      (updatedEventInfo.google_event_id || updatedEventInfo.status === "scheduled")
+    ) {
+      const syncRes = await syncEventToGoogleCalendar(user.id, updatedEventInfo);
+      if (syncRes?.googleEventId) {
+        updatedEventInfo = {
+          ...updatedEventInfo,
+          google_event_id: syncRes.googleEventId,
+        };
+      }
+    }
+  } catch (syncErr) {
+    console.error("Aviso ao atualizar evento no Google Calendar:", syncErr);
+  }
+
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
-  return { data: data as unknown as EventWithClientInfo };
+  return { data: updatedEventInfo };
 }
 
 export async function updateEventStatusAction(id: string, status: EventStatus) {
@@ -223,19 +255,21 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
     return { error: error.message };
   }
 
-  // Automação invisível: ao agendar, sincroniza agenda e drive se ainda não feito
-  if (status === "scheduled") {
+  // Ao agendar ou alterar status, sincroniza na agenda se conectado
+  if (status === "scheduled" || data.google_event_id) {
     try {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("google_refresh_token")
+        .select("google_refresh_token, google_access_token")
         .eq("id", user.id)
         .single();
-      if (profile?.google_refresh_token) {
+      if (profile?.google_refresh_token || profile?.google_access_token) {
         const ev = data as unknown as EventWithClientInfo;
-        syncEventToGoogleCalendar(user.id, ev).catch(() => {});
+        await syncEventToGoogleCalendar(user.id, ev);
       }
-    } catch {}
+    } catch (syncErr) {
+      console.error("Aviso ao sincronizar status no Google Calendar:", syncErr);
+    }
   }
 
   // Automação invisível: ao finalizar evento, baixa automaticamente tarefas vinculadas
@@ -265,6 +299,14 @@ export async function deleteEventAction(id: string) {
     return { error: "Não autenticado." };
   }
 
+  // Resgata o google_event_id antes da exclusão
+  const { data: existingEvent } = await supabase
+    .from("events")
+    .select("google_event_id")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
   const { error } = await supabase
     .from("events")
     .delete()
@@ -273,6 +315,11 @@ export async function deleteEventAction(id: string) {
 
   if (error) {
     return { error: error.message };
+  }
+
+  // Se o evento possuía vínculo na agenda, remove da conta Google
+  if (existingEvent?.google_event_id) {
+    deleteGoogleCalendarEvent(user.id, existingEvent.google_event_id).catch(() => {});
   }
 
   revalidatePath("/events");

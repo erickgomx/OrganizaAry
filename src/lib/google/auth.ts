@@ -27,7 +27,31 @@ export function createGoogleOAuth2Client() {
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = `${getBaseUrl()}/auth/callback`;
 
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "Credenciais do Google OAuth (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET) não configuradas no servidor."
+    );
+  }
+
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
+/**
+ * Checks whether the user has valid Google OAuth tokens stored.
+ */
+export async function isUserGoogleConnected(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", userId)
+      .single();
+
+    return Boolean(profile?.google_refresh_token || profile?.google_access_token);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -45,7 +69,7 @@ export async function getAuthenticatedGoogleClient(userId: string) {
 
   if (error || (!profile?.google_refresh_token && !profile?.google_access_token)) {
     throw new Error(
-      "Autorização do Google não encontrada para este usuário. Faça login com o Google permitindo o acesso à agenda e ao drive."
+      "Autorização do Google Agenda não encontrada. Conecte sua conta Google para sincronizar automaticamente."
     );
   }
 

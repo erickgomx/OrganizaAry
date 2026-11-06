@@ -75,7 +75,22 @@ export async function GET(request: Request) {
         profileUpdates.token_expires_at = expiresAt;
       }
 
-      await supabase.from("profiles").upsert(profileUpdates, { onConflict: "id" });
+      if (existingProfile) {
+        const { error: updateErr } = await supabase
+          .from("profiles")
+          .update(profileUpdates)
+          .eq("id", user.id);
+        if (updateErr) {
+          console.error("Erro ao salvar tokens OAuth no perfil:", updateErr);
+        }
+      } else {
+        const { error: upsertErr } = await supabase
+          .from("profiles")
+          .upsert(profileUpdates, { onConflict: "id" });
+        if (upsertErr) {
+          console.error("Erro ao criar perfil com tokens OAuth:", upsertErr);
+        }
+      }
 
       const destination = getSafeRedirectUrl(next, origin);
       if (isFirstLogin) {

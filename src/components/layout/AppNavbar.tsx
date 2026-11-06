@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Heart } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { SignOutButton } from "./SignOutButton";
 import { UserGuideModal } from "@/components/onboarding/UserGuideModal";
 import { PrincessWelcomeModal } from "@/components/onboarding/PrincessWelcomeModal";
@@ -27,6 +28,34 @@ export function AppNavbar({ profile }: AppNavbarProps) {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isLoveNoteOpen, setIsLoveNoteOpen] = useState(false);
   const isGoogleConnected = profile?.hasGoogleSync ?? Boolean(profile?.google_refresh_token);
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setIsConnectingGoogle(true);
+      const supabase = createClient();
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(pathname || "/dashboard")}`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          scopes: [
+            "https://www.googleapis.com/auth/calendar.events",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "openid",
+          ].join(" "),
+        },
+      });
+    } catch (err) {
+      console.error("Erro ao conectar Google:", err);
+      setIsConnectingGoogle(false);
+    }
+  };
 
   // Check on initial load if love note or tutorial has been seen, otherwise open smoothly
   useEffect(() => {
@@ -152,14 +181,31 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             </button>
 
             {isGoogleConnected ? (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#162017] border border-[#273829] text-[#9fc193]">
+              <span
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#162017] border border-[#273829] text-[#9fc193]"
+                title="Google Agenda conectado e ativo"
+              >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#82af74]" />
-                Google Sincronizado
+                Google Agenda Ativo
               </span>
+
             ) : (
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[#211a14] border border-[#382b21] text-[#9873a1]">
-                Google Pendente
-              </span>
+              <button
+                type="button"
+                onClick={handleConnectGoogle}
+                disabled={isConnectingGoogle}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#211a14] hover:bg-[#2c221b] border border-[#ff9e3b]/40 text-[#ffb066] transition-all cursor-pointer shadow-sm group"
+                title="Clique para autorizar e conectar com o seu Google Agenda"
+              >
+                {isConnectingGoogle ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#ffb066]" />
+                ) : (
+                  <Calendar className="w-3.5 h-3.5 text-[#ff9e3b] group-hover:scale-105 transition-transform" />
+                )}
+                <span>Conectar Agenda</span>
+              </button>
+
+
             )}
 
             <div className="flex items-center gap-2">
