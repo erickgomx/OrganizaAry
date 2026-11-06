@@ -32,7 +32,7 @@ export async function getGoogleStatusAction(): Promise<{
       .from("profiles")
       .select("google_refresh_token, google_access_token, email")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     return {
       isConnected: Boolean(profile?.google_refresh_token || profile?.google_access_token),
@@ -172,7 +172,7 @@ export async function diagnoseGoogleIntegrationAction(): Promise<GoogleDiagnosti
       .from("profiles")
       .select("id, email, google_access_token, google_refresh_token, token_expires_at")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     const hasClientId = Boolean(process.env.GOOGLE_CLIENT_ID);
     const hasClientSecret = Boolean(process.env.GOOGLE_CLIENT_SECRET);
@@ -195,14 +195,31 @@ export async function diagnoseGoogleIntegrationAction(): Promise<GoogleDiagnosti
         calendarApiMessage: isMissingColumn
           ? "As colunas para salvar os tokens do Google não existem na tabela 'profiles' do seu Supabase."
           : `Erro ao consultar perfil no Supabase: ${profileErr.message}`,
-        solutionSteps: isMissingColumn
-          ? [
-              "Abra o Supabase Dashboard > SQL Editor.",
-              "Cole e execute o seguinte comando:",
-              "ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS google_access_token text, ADD COLUMN IF NOT EXISTS google_refresh_token text, ADD COLUMN IF NOT EXISTS token_expires_at timestamptz;",
-              "Depois, clique em 'Conectar Agenda' no OrganizaAry para salvar as credenciais.",
-            ]
-          : ["Verifique as permissões de RLS da tabela 'profiles' no Supabase."],
+        solutionSteps: [
+          "Abra o Supabase Dashboard > SQL Editor.",
+          "Execute o script SQL fornecido para criar as colunas e políticas de segurança.",
+          "Depois, clique em 'Conectar Agenda' no OrganizaAry.",
+        ],
+      };
+    }
+
+    if (!profile) {
+      return {
+        authenticated: true,
+        userEmail: user.email,
+        hasProfileRecord: false,
+        hasAccessToken: false,
+        hasRefreshToken: false,
+        hasClientIdEnv: hasClientId,
+        hasClientSecretEnv: hasClientSecret,
+        calendarApiStatus: "error",
+        calendarApiMessage:
+          "O seu usuário ainda não possui registro na tabela 'profiles' do Supabase.",
+        solutionSteps: [
+          "Abra o Supabase Dashboard > SQL Editor.",
+          "Execute o script de sincronização para criar o registro do seu perfil a partir de auth.users.",
+          "Depois, clique em 'Conectar Agenda' na barra superior do OrganizaAry.",
+        ],
       };
     }
 
