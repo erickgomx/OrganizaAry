@@ -96,6 +96,20 @@ export async function generateMeetAction(eventId: string): Promise<GoogleMeetRes
       return { success: false, error: "Não autenticado." };
     }
 
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.google_refresh_token && !profile?.google_access_token) {
+      return {
+        success: false,
+        error: "Google desconectado. Conecte sua conta do Google para gerar salas do Meet.",
+        requiresAuth: true,
+      };
+    }
+
     const event = await getEventById(eventId);
     if (!event) {
       return { success: false, error: "Captação não encontrada." };

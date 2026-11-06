@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClients } from "@/actions/clients";
 import { AppNavbar } from "@/components/layout/AppNavbar";
@@ -22,7 +22,7 @@ export default async function ClientsPage() {
 
   const { data: rawProfile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, avatar_url, google_refresh_token")
+    .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
     .eq("id", user.id)
     .single();
 
@@ -32,7 +32,7 @@ export default async function ClientsPage() {
         email: rawProfile.email,
         full_name: rawProfile.full_name,
         avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
       }
     : null;
 

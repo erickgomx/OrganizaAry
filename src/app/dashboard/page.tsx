@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   const [profileRes, clientsRes, eventsRes, tasksRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, email, full_name, avatar_url, google_refresh_token")
+      .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
       .eq("id", user.id)
       .single(),
     supabase.from("clients").select("id, name, phone").eq("user_id", user.id),
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
         email: rawProfile.email,
         full_name: rawProfile.full_name,
         avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
       }
     : null;
   const clients = (clientsRes.data || []) as { id: string; name: string; phone?: string | null }[];

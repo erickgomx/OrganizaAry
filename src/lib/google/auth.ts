@@ -23,15 +23,9 @@ export function getBaseUrl(): string {
 }
 
 export function createGoogleOAuth2Client() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const clientId = process.env.GOOGLE_CLIENT_ID || undefined;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || undefined;
   const redirectUri = `${getBaseUrl()}/auth/callback`;
-
-  if (!clientId || !clientSecret) {
-    throw new Error(
-      "Credenciais do Google OAuth (GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET) não configuradas no servidor."
-    );
-  }
 
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }

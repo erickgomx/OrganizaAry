@@ -41,6 +41,7 @@ import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl } from "@/lib/utils";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
+import { createClient } from "@/lib/supabase/client";
 
 interface EventsViewProps {
   initialEvents: EventWithClientInfo[];
@@ -69,7 +70,46 @@ export function EventsView({
   const [expandedTaskChecklists, setExpandedTaskChecklists] = useState<Record<string, boolean>>({});
   const [syncingEventId, setSyncingEventId] = useState<string | null>(null);
   const [generatingMeetId, setGeneratingMeetId] = useState<string | null>(null);
-  const [syncNotice, setSyncNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [syncNotice, setSyncNotice] = useState<{
+    type: "success" | "error";
+    message: string;
+    requiresAuth?: boolean;
+  } | null>(null);
+
+  const handleConnectGoogle = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          scopes: [
+            "https://www.googleapis.com/auth/calendar.events",
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/userinfo.email",
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "openid",
+          ].join(" "),
+        },
+      });
+
+      if (error) {
+        alert(`Erro ao iniciar conexão com Google: ${error.message}`);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao abrir consentimento do Google.");
+    }
+  };
 
   const handleSyncCalendar = async (eventId: string) => {
     setSyncingEventId(eventId);
@@ -90,6 +130,7 @@ export function EventsView({
         setSyncNotice({
           type: "error",
           message: res.error,
+          requiresAuth: res.requiresAuth,
         });
       }
     } catch (err) {
@@ -401,17 +442,28 @@ export function EventsView({
 
       {syncNotice && (
         <div
-          className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-all ${
+          className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-all gap-3 ${
             syncNotice.type === "success"
               ? "bg-[#162017] border-[#273829] text-[#9fc193]"
               : "bg-red-950/30 border-red-900/40 text-red-300"
           }`}
         >
-          <span>{syncNotice.message}</span>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span>{syncNotice.message}</span>
+            {syncNotice.requiresAuth && (
+              <button
+                type="button"
+                onClick={handleConnectGoogle}
+                className="px-2.5 py-1 rounded-lg bg-[#9873a1] text-[#120e15] font-semibold text-[11px] hover:bg-[#bba0c1] transition-all cursor-pointer shadow-sm"
+              >
+                Conectar Google Agenda Agora
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setSyncNotice(null)}
-            className="text-[11px] underline opacity-80 hover:opacity-100 ml-3"
+            className="text-[11px] underline opacity-80 hover:opacity-100 ml-auto shrink-0"
           >
             Fechar
           </button>

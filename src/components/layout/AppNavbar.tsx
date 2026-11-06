@@ -34,7 +34,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
     try {
       setIsConnectingGoogle(true);
       const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(pathname || "/dashboard")}`,
@@ -51,8 +51,20 @@ export function AppNavbar({ profile }: AppNavbarProps) {
           ].join(" "),
         },
       });
+
+      if (error) {
+        console.error("Erro Supabase OAuth:", error);
+        alert(`Erro ao conectar com Google: ${error.message}`);
+        return;
+      }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err) {
       console.error("Erro ao conectar Google:", err);
+      alert("Falha ao abrir autorização do Google. Tente novamente.");
+    } finally {
       setIsConnectingGoogle(false);
     }
   };

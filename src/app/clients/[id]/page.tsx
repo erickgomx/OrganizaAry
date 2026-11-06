@@ -1,4 +1,4 @@
-﻿import { notFound, redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getClientById } from "@/actions/clients";
 import { AppNavbar } from "@/components/layout/AppNavbar";
@@ -38,7 +38,7 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
 
   const { data: rawProfile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, avatar_url, google_refresh_token")
+    .select("id, email, full_name, avatar_url, google_refresh_token, google_access_token")
     .eq("id", user.id)
     .single();
 
@@ -48,7 +48,7 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
         email: rawProfile.email,
         full_name: rawProfile.full_name,
         avatar_url: rawProfile.avatar_url,
-        hasGoogleSync: Boolean(rawProfile.google_refresh_token),
+        hasGoogleSync: Boolean(rawProfile.google_refresh_token || rawProfile.google_access_token),
       }
     : null;
 
