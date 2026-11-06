@@ -334,9 +334,9 @@ export function EventModal({
             />
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#120e15]/60 border border-[#33293c] text-[11px] text-[#968a9c]">
-            <Calendar className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
-            <span>Sincroniza data, local e cliente automaticamente na sua Google Agenda ao salvar.</span>
+          <div className="flex items-center gap-1.5 text-[11px] text-[#6e6375] px-1">
+            <Calendar className="w-3.5 h-3.5 text-[#9873a1]/70 shrink-0" />
+            <span>Sincronização com Google Agenda ativa ao salvar</span>
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-3 border-t border-[#33293c]">

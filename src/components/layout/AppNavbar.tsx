@@ -195,20 +195,22 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             </button>
 
             {isGoogleConnected ? (
-              <span
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#162017] border border-[#273829] text-[#9fc193]"
-                title="Google Agenda conectado e ativo"
+              <button
+                type="button"
+                onClick={() => setIsDiagnosticOpen(true)}
+                className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium text-[#9fc193] bg-[#162017]/70 hover:bg-[#162017] border border-[#273829] hover:border-[#9fc193]/30 transition-all cursor-pointer"
+                title="Google Agenda conectado (clique para status)"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#82af74]" />
-                Google Agenda Ativo
-              </span>
-
+                <Calendar className="w-3 h-3 text-[#82af74]" />
+                <span className="hidden lg:inline text-[10px]">Google Ativo</span>
+              </button>
             ) : (
               <button
                 type="button"
                 onClick={handleConnectGoogle}
                 disabled={isConnectingGoogle}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#211a14] hover:bg-[#2c221b] border border-[#ff9e3b]/40 text-[#ffb066] transition-all cursor-pointer shadow-sm group"
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium bg-[#211a14] hover:bg-[#2c221b] border border-[#ff9e3b]/30 text-[#ffb066] transition-all cursor-pointer shadow-sm group"
                 title="Clique para autorizar e conectar com o seu Google Agenda"
               >
                 {isConnectingGoogle ? (
@@ -216,17 +218,15 @@ export function AppNavbar({ profile }: AppNavbarProps) {
                 ) : (
                   <Calendar className="w-3.5 h-3.5 text-[#ff9e3b] group-hover:scale-105 transition-transform" />
                 )}
-                <span>Conectar Agenda</span>
+                <span className="hidden sm:inline text-[10px]">Conectar Agenda</span>
               </button>
-
-
             )}
 
             <button
               type="button"
               onClick={() => setIsDiagnosticOpen(true)}
-              className="p-1.5 rounded-lg text-[#6e6375] hover:text-[#bba0c1] hover:bg-[#1a151f] border border-transparent hover:border-[#33293c] transition-all cursor-pointer"
-              title="Diagnóstico da integração com o Google"
+              className="p-1.5 rounded-lg text-[#6e6375] hover:text-[#bba0c1] hover:bg-[#1a151f] transition-all cursor-pointer"
+              title="Status das Integrações"
             >
               <Activity className="w-3.5 h-3.5 text-[#9873a1]" />
             </button>

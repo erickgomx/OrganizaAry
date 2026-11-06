@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Plus,
@@ -22,6 +22,8 @@ import {
   RotateCw,
   Loader2,
   CalendarX,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import {
   syncCalendarAction,
@@ -84,6 +86,18 @@ export function EventsView({
     requiresAuth?: boolean;
   } | null>(null);
 
+  // Auto-dispensa avisos de integrações de forma sutil
+  useEffect(() => {
+    if (!syncNotice) return;
+    const timer = setTimeout(
+      () => {
+        setSyncNotice(null);
+      },
+      syncNotice.type === "success" ? 3200 : 5000
+    );
+    return () => clearTimeout(timer);
+  }, [syncNotice]);
+
   const handleConnectGoogle = async () => {
     try {
       const supabase = createClient();
@@ -132,19 +146,19 @@ export function EventsView({
         );
         setSyncNotice({
           type: "success",
-          message: "Ensaio sincronizado com sucesso no Google Agenda!",
+          message: "Sincronizado na Google Agenda",
         });
       } else {
         setSyncNotice({
           type: "error",
-          message: res.error,
+          message: res.error || "Falha ao sincronizar agenda",
           requiresAuth: res.requiresAuth,
         });
       }
     } catch (err) {
       setSyncNotice({
         type: "error",
-        message: err instanceof Error ? err.message : "Erro ao sincronizar com Google Agenda.",
+        message: err instanceof Error ? err.message : "Erro ao sincronizar.",
       });
     } finally {
       setSyncingEventId(null);
@@ -164,12 +178,12 @@ export function EventsView({
         );
         setSyncNotice({
           type: "success",
-          message: "Ensaio removido da Google Agenda com sucesso.",
+          message: "Removido da Google Agenda",
         });
       } else {
         setSyncNotice({
           type: "error",
-          message: res.error || "Não foi possível remover da Google Agenda.",
+          message: res.error || "Não foi possível remover da agenda",
         });
       }
     } catch (err) {
@@ -178,7 +192,7 @@ export function EventsView({
         message:
           err instanceof Error
             ? err.message
-            : "Erro ao remover ensaio da Google Agenda.",
+            : "Erro ao desvincular da agenda.",
       });
     } finally {
       setRemovingCalendarId(null);
@@ -198,18 +212,19 @@ export function EventsView({
         );
         setSyncNotice({
           type: "success",
-          message: "Link da sala Google Meet criado com sucesso!",
+          message: "Sala do Google Meet criada",
         });
       } else {
         setSyncNotice({
           type: "error",
-          message: res.error,
+          message: res.error || "Falha ao criar sala do Meet",
+          requiresAuth: res.requiresAuth,
         });
       }
     } catch (err) {
       setSyncNotice({
         type: "error",
-        message: err instanceof Error ? err.message : "Erro ao gerar sala do Google Meet.",
+        message: err instanceof Error ? err.message : "Erro ao gerar Meet.",
       });
     } finally {
       setGeneratingMeetId(null);
@@ -482,42 +497,53 @@ export function EventsView({
         </div>
       </div>
 
+      {/* Floating Minimalist Integration Toast */}
       {syncNotice && (
-        <div
-          className={`flex items-center justify-between p-3 rounded-xl border text-xs transition-all gap-3 ${
-            syncNotice.type === "success"
-              ? "bg-[#162017] border-[#273829] text-[#9fc193]"
-              : "bg-red-950/30 border-red-900/40 text-red-300"
-          }`}
-        >
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span>{syncNotice.message}</span>
+        <div className="fixed bottom-6 right-4 sm:right-6 z-50 max-w-sm animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border shadow-2xl backdrop-blur-md ${
+              syncNotice.type === "success"
+                ? "bg-[#141d15]/95 border-[#273829] text-[#9fc193] shadow-black/50"
+                : "bg-[#211618]/95 border-[#432328] text-[#fca5a5] shadow-black/50"
+            }`}
+          >
+            {syncNotice.type === "success" ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#82af74] shrink-0" />
+            ) : (
+              <AlertTriangle className="w-3.5 h-3.5 text-[#f87171] shrink-0" />
+            )}
+
+            <span className="truncate max-w-[220px]">{syncNotice.message}</span>
+
             {syncNotice.requiresAuth && (
               <button
                 type="button"
                 onClick={handleConnectGoogle}
-                className="px-2.5 py-1 rounded-lg bg-[#9873a1] text-[#120e15] font-semibold text-[11px] hover:bg-[#bba0c1] transition-all cursor-pointer shadow-sm"
+                className="ml-1 px-2 py-0.5 rounded-md bg-[#9873a1] text-[#120e15] text-[10px] font-semibold hover:bg-[#bba0c1] transition-all shrink-0 cursor-pointer shadow-sm"
               >
-                Conectar Google Agenda Agora
+                Conectar
               </button>
             )}
-            {syncNotice.type === "error" && (
+
+            {syncNotice.type === "error" && !syncNotice.requiresAuth && (
               <button
                 type="button"
                 onClick={() => setIsDiagnosticOpen(true)}
-                className="px-2 py-0.5 rounded-lg border border-red-800/60 bg-red-950/40 text-red-200 text-[11px] hover:bg-red-900/40 transition-colors cursor-pointer"
+                className="ml-1 px-1.5 py-0.5 rounded-md border border-red-800/50 bg-red-950/40 text-red-200 text-[10px] hover:bg-red-900/40 transition-colors shrink-0 cursor-pointer"
               >
-                Ver Diagnóstico
+                Status
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => setSyncNotice(null)}
+              className="ml-1 p-0.5 rounded text-current/50 hover:text-current hover:bg-white/5 transition-colors shrink-0"
+              title="Fechar"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setSyncNotice(null)}
-            className="text-[11px] underline opacity-80 hover:opacity-100 ml-auto shrink-0"
-          >
-            Fechar
-          </button>
         </div>
       )}
 

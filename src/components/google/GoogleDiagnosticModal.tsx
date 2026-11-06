@@ -143,26 +143,26 @@ export function GoogleDiagnosticModal({
           <div className="space-y-4 text-xs">
             {/* Status Geral */}
             <div
-              className={`p-3 rounded-xl border flex items-start gap-2.5 ${
+              className={`px-3 py-2.5 rounded-xl border flex items-center gap-2.5 text-xs ${
                 info.calendarApiStatus === "ok"
-                  ? "bg-[#162017] border-[#273829] text-[#9fc193]"
+                  ? "bg-[#162017]/80 border-[#273829] text-[#9fc193]"
                   : info.calendarApiStatus === "not_connected"
-                  ? "bg-[#211a14] border-[#382b21] text-[#ffb066]"
-                  : "bg-red-950/30 border-red-900/40 text-red-300"
+                  ? "bg-[#211a14]/80 border-[#382b21] text-[#ffb066]"
+                  : "bg-red-950/20 border-red-900/30 text-red-300"
               }`}
             >
               {info.calendarApiStatus === "ok" ? (
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#82af74] mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-[#82af74]" />
               ) : info.calendarApiStatus === "not_connected" ? (
-                <AlertTriangle className="w-4 h-4 shrink-0 text-[#ffb066] mt-0.5" />
+                <AlertTriangle className="w-4 h-4 shrink-0 text-[#ffb066]" />
               ) : (
-                <XCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+                <XCircle className="w-4 h-4 shrink-0 text-red-400" />
               )}
-              <div className="space-y-1">
-                <p className="font-semibold text-xs">{info.calendarApiMessage}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-xs leading-tight">{info.calendarApiMessage}</p>
                 {info.userEmail && (
-                  <p className="text-[11px] opacity-80">
-                    Conta logada: {info.userEmail}
+                  <p className="text-[10px] opacity-70">
+                    Conta: {info.userEmail}
                   </p>
                 )}
               </div>

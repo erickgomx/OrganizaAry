@@ -63,7 +63,7 @@ export async function syncCalendarAction(eventId: string): Promise<GoogleSyncRes
     if (!profile?.google_refresh_token && !profile?.google_access_token) {
       return {
         success: false,
-        error: "Google Agenda desconectado. Conecte sua conta do Google na barra superior para sincronizar.",
+        error: "Google Agenda não conectado.",
         requiresAuth: true,
       };
     }
@@ -107,7 +107,7 @@ export async function generateMeetAction(eventId: string): Promise<GoogleMeetRes
     if (!profile?.google_refresh_token && !profile?.google_access_token) {
       return {
         success: false,
-        error: "Google desconectado. Conecte sua conta do Google para gerar salas do Meet.",
+        error: "Google Meet não conectado.",
         requiresAuth: true,
       };
     }
