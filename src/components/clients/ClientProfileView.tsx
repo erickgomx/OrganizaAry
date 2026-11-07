@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -49,6 +49,11 @@ interface ClientProfileViewProps {
 export function ClientProfileView({ client, events: initialEvents, stats }: ClientProfileViewProps) {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>(initialEvents);
+
+  // Sincroniza eventos do cliente sempre que houver revalidação no servidor
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
   const [isEditClientOpen, setIsEditClientOpen] = useState(false);
   const [isNewEventOpen, setIsNewEventOpen] = useState(false);
   const [isDeleteClientModalOpen, setIsDeleteClientModalOpen] = useState(false);
@@ -328,7 +333,18 @@ export function ClientProfileView({ client, events: initialEvents, stats }: Clie
           onClose={() => setIsNewEventOpen(false)}
           defaultClientId={client.id}
           clients={[{ id: client.id, name: client.name }]}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedEvent) => {
+            if (savedEvent) {
+              setEvents((prev) => {
+                const exists = prev.some((e) => e.id === savedEvent.id);
+                if (exists) {
+                  return prev.map((e) => (e.id === savedEvent.id ? savedEvent : e));
+                }
+                return [savedEvent, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
 

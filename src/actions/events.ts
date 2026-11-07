@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { Event, EventStatus, Client, Database } from "@/types/database";
 import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
+import { parseEventDateToIso } from "@/lib/utils";
 
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
@@ -111,7 +112,7 @@ export async function createEventAction(input: EventInput) {
       user_id: user.id,
       client_id: input.clientId,
       title: input.title.trim(),
-      date: new Date(input.date).toISOString(),
+      date: parseEventDateToIso(input.date),
       location: input.location?.trim() || null,
       status: input.status || "budget_lead",
       price: input.price !== undefined ? Number(input.price) : 0,
@@ -179,7 +180,7 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
   }
 
   if (input.title !== undefined) updatePayload.title = input.title.trim();
-  if (input.date !== undefined) updatePayload.date = new Date(input.date).toISOString();
+  if (input.date !== undefined) updatePayload.date = parseEventDateToIso(input.date);
   if (input.location !== undefined) updatePayload.location = input.location?.trim() || null;
   if (input.status !== undefined) updatePayload.status = input.status;
   if (input.price !== undefined) updatePayload.price = Number(input.price);
@@ -197,7 +198,7 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
     return { error: error.message };
   }
 
-  // Atualiza no Google Calendar se o evento já estava sincronizado ou se tem data/horário alterado
+  // Atualiza no Google Calendar se o usuário estiver conectado
   let updatedEventInfo = data as unknown as EventWithClientInfo;
   try {
     const { data: profile } = await supabase
@@ -206,10 +207,7 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
       .eq("id", user.id)
       .maybeSingle();
 
-    if (
-      (profile?.google_refresh_token || profile?.google_access_token) &&
-      (updatedEventInfo.google_event_id || updatedEventInfo.status === "scheduled")
-    ) {
+    if (profile?.google_refresh_token || profile?.google_access_token) {
       const syncRes = await syncEventToGoogleCalendar(user.id, updatedEventInfo);
       if (syncRes?.googleEventId) {
         updatedEventInfo = {
@@ -225,6 +223,9 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
+  if (updatedEventInfo.client_id) {
+    revalidatePath(`/clients/${updatedEventInfo.client_id}`);
+  }
   return { data: updatedEventInfo };
 }
 

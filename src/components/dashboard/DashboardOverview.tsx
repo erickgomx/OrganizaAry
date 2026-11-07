@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -50,6 +50,15 @@ export function DashboardOverview({
   const router = useRouter();
   const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
+
+  // Sincroniza estado com as props quando o servidor revalidar dados
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState<{ id: string; title: string } | null>(null);
@@ -382,7 +391,18 @@ export function DashboardOverview({
           isOpen={isEventModalOpen}
           onClose={() => setIsEventModalOpen(false)}
           clients={clients}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedEvent) => {
+            if (savedEvent) {
+              setEvents((prev) => {
+                const exists = prev.some((e) => e.id === savedEvent.id);
+                if (exists) {
+                  return prev.map((e) => (e.id === savedEvent.id ? savedEvent : e));
+                }
+                return [savedEvent, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
 

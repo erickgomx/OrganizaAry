@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -32,6 +32,11 @@ interface ClientsListProps {
 export function ClientsList({ initialClients }: ClientsListProps) {
   const router = useRouter();
   const [clients, setClients] = useState<ClientWithStats[]>(initialClients);
+
+  // Sincroniza lista de clientes sempre que o servidor revalidar
+  useEffect(() => {
+    setClients(initialClients);
+  }, [initialClients]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<ClientWithStats | null>(null);

@@ -158,4 +158,50 @@ export function parseCurrencyInput(val: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+/**
+ * Converte qualquer formato de data/hora (ISO completo ou local "YYYY-MM-DDTHH:mm")
+ * para string ISO 8601 UTC de forma segura, evitando que servidores com timezone UTC
+ * desloquem o horário digitado no fuso horário do Brasil (-03:00 / America/Sao_Paulo).
+ */
+export function parseEventDateToIso(dateStr: string): string {
+  if (!dateStr) return new Date().toISOString();
+  // Se já possui indicador de fuso (Z ou offset +/-HH:mm ou +/-HHmm)
+  if (/Z$|[+-]\d{2}:?\d{2}$/.test(dateStr)) {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+  }
+  // Se é datetime local (ex: "2026-11-10T14:00" ou "2026-11-10T14:00:00")
+  // Assume fuso padrão do Brasil (-03:00 / America/Sao_Paulo)
+  const withTz = `${dateStr.length === 16 ? `${dateStr}:00` : dateStr}-03:00`;
+  const d = new Date(withTz);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString();
+  }
+  return new Date(dateStr).toISOString();
+}
+
+/**
+ * Formata uma data/hora (ISO do banco ou string) para o formato exigido pelo
+ * input HTML5 datetime-local ("YYYY-MM-DDTHH:mm") no fuso local do navegador.
+ */
+export function formatDateTimeForInput(dateStr?: string | null): string {
+  if (!dateStr) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(14, 0, 0, 0);
+    const year = tomorrow.getFullYear();
+    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const day = String(tomorrow.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}T14:00`;
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 

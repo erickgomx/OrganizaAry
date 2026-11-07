@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,6 +49,11 @@ interface KanbanBoardProps {
 export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
   const router = useRouter();
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
+
+  // Sincroniza tarefas do kanban sempre que o servidor revalidar
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
   const [searchTerm, setSearchTerm] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "all">("all");
   const [isModalOpen, setIsModalOpen] = useState(false);

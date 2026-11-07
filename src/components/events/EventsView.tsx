@@ -81,6 +81,15 @@ export function EventsView({
   const [activeTab, setActiveTab] = useState<"agenda" | "edicao">("agenda");
   const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
+
+  // Sincroniza estado local sempre que o Next.js revalidar dados do servidor via router.refresh()
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -1013,7 +1022,18 @@ export function EventsView({
           }}
           event={editingEvent}
           clients={clients}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedEvent) => {
+            if (savedEvent) {
+              setEvents((prev) => {
+                const exists = prev.some((e) => e.id === savedEvent.id);
+                if (exists) {
+                  return prev.map((e) => (e.id === savedEvent.id ? savedEvent : e));
+                }
+                return [savedEvent, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
 

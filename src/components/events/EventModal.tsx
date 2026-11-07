@@ -5,7 +5,12 @@ import { X, Loader2, Calendar, MapPin, User, FileText, CheckCircle, Trash2, Chev
 import { createEventAction, updateEventAction, deleteEventAction, EventInput, EventWithClientInfo } from "@/actions/events";
 import { EventStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { handleFormKeyDownEnterToNextField, formatCurrencyInput, parseCurrencyInput } from "@/lib/utils";
+import {
+  handleFormKeyDownEnterToNextField,
+  formatCurrencyInput,
+  parseCurrencyInput,
+  formatDateTimeForInput,
+} from "@/lib/utils";
 
 interface SimpleClientOption {
   id: string;
@@ -18,7 +23,7 @@ interface EventModalProps {
   event?: EventWithClientInfo | null;
   clients: SimpleClientOption[];
   defaultClientId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (savedEvent?: EventWithClientInfo) => void;
 }
 
 export function EventModal({
@@ -31,29 +36,10 @@ export function EventModal({
 }: EventModalProps) {
   const isEditing = Boolean(event);
 
-  const getInitialDateTime = () => {
-    if (event?.date) {
-      const d = new Date(event.date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      const hours = String(d.getHours()).padStart(2, "0");
-      const minutes = String(d.getMinutes()).padStart(2, "0");
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    }
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(14, 0, 0, 0);
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
-    const day = String(tomorrow.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}T14:00`;
-  };
-
   const [formData, setFormData] = useState<EventInput>({
     title: event?.title || "",
     clientId: event?.client_id || defaultClientId || (clients[0]?.id || ""),
-    date: getInitialDateTime(),
+    date: formatDateTimeForInput(event?.date),
     location: event?.location || "",
     status: event?.status || "budget_lead",
     price: event?.price !== undefined ? Number(event.price) : 0,
@@ -87,7 +73,7 @@ export function EventModal({
         setFormData({
           title: event.title || "",
           clientId: event.client_id || defaultClientId || (clients[0]?.id || ""),
-          date: event.date || getInitialDateTime(),
+          date: formatDateTimeForInput(event.date),
           location: event.location || "",
           status: event.status || "budget_lead",
           price: num,
@@ -105,7 +91,7 @@ export function EventModal({
         setFormData({
           title: "",
           clientId: defaultClientId || (clients[0]?.id || ""),
-          date: getInitialDateTime(),
+          date: formatDateTimeForInput(null),
           location: "",
           status: "budget_lead",
           price: 0,
@@ -156,15 +142,30 @@ export function EventModal({
     setError(null);
 
     try {
-      if (isEditing && event) {
-        const res = await updateEventAction(event.id, formData);
-        if (res.error) throw new Error(res.error);
-      } else {
-        const res = await createEventAction(formData);
-        if (res.error) throw new Error(res.error);
+      // Converte a data local do datetime-local para ISO UTC usando o fuso do navegador
+      let dateToSubmit = formData.date;
+      if (formData.date && !formData.date.includes("Z") && !/[+-]\d{2}:?\d{2}$/.test(formData.date)) {
+        const localDate = new Date(formData.date);
+        if (!isNaN(localDate.getTime())) {
+          dateToSubmit = localDate.toISOString();
+        }
       }
 
-      onSuccess?.();
+      const payload: EventInput = {
+        ...formData,
+        date: dateToSubmit,
+      };
+
+      if (isEditing && event) {
+        const res = await updateEventAction(event.id, payload);
+        if (res.error) throw new Error(res.error);
+        onSuccess?.(res.data);
+      } else {
+        const res = await createEventAction(payload);
+        if (res.error) throw new Error(res.error);
+        onSuccess?.(res.data);
+      }
+
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao salvar evento.";
