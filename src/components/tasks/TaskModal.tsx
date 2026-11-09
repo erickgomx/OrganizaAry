@@ -12,6 +12,7 @@ import {
   Trash2,
   ChevronDown,
   Plus,
+  Check,
   CheckCircle2,
   Circle,
   ListChecks,
@@ -120,7 +121,7 @@ export function TaskModal({
     const text = (textToAdd ?? newChecklistText).trim();
     if (!text) return;
 
-    if (checklist.some((item) => item.text.toLowerCase() === text.toLowerCase())) {
+    if (checklist.some((item) => item.text.trim().toLowerCase() === text.toLowerCase())) {
       setNewChecklistText("");
       return;
     }
@@ -134,6 +135,26 @@ export function TaskModal({
     if (!textToAdd) {
       setNewChecklistText("");
     }
+  };
+
+  const handleToggleSuggestion = (suggestionText: string) => {
+    const text = suggestionText.trim();
+    if (!text) return;
+
+    setChecklist((prev) => {
+      const existsIndex = prev.findIndex(
+        (item) => item.text.trim().toLowerCase() === text.toLowerCase()
+      );
+      if (existsIndex >= 0) {
+        return prev.filter((_, idx) => idx !== existsIndex);
+      }
+      const newItem: TaskChecklistItem = {
+        id: createChecklistItemId(),
+        text,
+        completed: false,
+      };
+      return [...prev, newItem];
+    });
   };
 
   const handleToggleChecklistItem = (id: string) => {
@@ -344,28 +365,44 @@ export function TaskModal({
             )}
 
             {/* Quick Suggestions */}
-            <div className="space-y-1">
-              <span className="text-[10px] text-[#6e6375] font-medium block">
-                Sugestões rápidas de etapas:
-              </span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-[#968a9c] font-medium block">
+                  Sugestões rápidas de etapas:
+                </span>
+                {checklist.length > 0 && (
+                  <span className="text-[10px] text-[#6e6375]">
+                    {checklist.length} no check-list
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1.5">
                 {quickSuggestions.map((suggestion) => {
-                  const alreadyAdded = checklist.some(
-                    (item) => item.text.toLowerCase() === suggestion.toLowerCase()
+                  const isAdded = checklist.some(
+                    (item) => item.text.trim().toLowerCase() === suggestion.trim().toLowerCase()
                   );
                   return (
                     <button
                       key={suggestion}
                       type="button"
-                      disabled={alreadyAdded}
-                      onClick={() => handleAddChecklistItem(suggestion)}
-                      className={`text-[10px] px-2 py-0.5 rounded-md border transition-colors ${
-                        alreadyAdded
-                          ? "border-[#33293c]/40 text-[#6e6375] opacity-50 cursor-not-allowed"
-                          : "border-[#33293c] text-[#968a9c] hover:text-[#f4eff5] hover:border-[#9873a1]/50 hover:bg-[#231c29]"
+                      onClick={() => handleToggleSuggestion(suggestion)}
+                      className={`text-[10px] px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                        isAdded
+                          ? "bg-[#9873a1]/20 border-[#9873a1]/70 text-[#f4eff5] shadow-sm font-medium"
+                          : "bg-[#120e15] border-[#33293c] text-[#968a9c] hover:text-[#f4eff5] hover:border-[#9873a1]/50 hover:bg-[#231c29]"
                       }`}
+                      title={
+                        isAdded
+                          ? `Clique para remover "${suggestion}" do check-list`
+                          : `Clique para adicionar "${suggestion}" ao check-list`
+                      }
                     >
-                      + {suggestion}
+                      {isAdded ? (
+                        <Check className="w-3 h-3 text-[#9fc193] shrink-0" />
+                      ) : (
+                        <Plus className="w-3 h-3 text-[#9873a1] shrink-0" />
+                      )}
+                      <span>{suggestion}</span>
                     </button>
                   );
                 })}
@@ -390,8 +427,12 @@ export function TaskModal({
               <button
                 type="button"
                 onClick={() => handleAddChecklistItem()}
-                disabled={!newChecklistText.trim()}
-                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#231c29] border border-[#33293c] text-[#bba0c1] hover:text-[#f4eff5] hover:border-[#9873a1]/50 text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl border text-xs font-medium transition-all shrink-0 cursor-pointer active:scale-95 ${
+                  newChecklistText.trim()
+                    ? "bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] border-[#9873a1] font-semibold"
+                    : "bg-[#231c29] border-[#33293c] text-[#6e6375] hover:text-[#968a9c]"
+                }`}
+                title="Adicionar etapa ao check-list"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Adicionar</span>
