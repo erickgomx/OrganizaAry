@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
 import { Task, TaskPriority, TaskStatus, Database } from "@/types/database";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
+import { parseTaskDueDateToIso } from "@/lib/utils";
 
 export type TaskUpdate = Database["public"]["Tables"]["tasks"]["Update"];
 
@@ -102,7 +103,7 @@ export async function createTaskAction(input: TaskInput) {
       description: input.description?.trim() || null,
       priority: input.priority || "medium",
       status: input.status || "todo",
-      due_date: input.dueDate ? new Date(input.dueDate).toISOString() : null,
+      due_date: parseTaskDueDateToIso(input.dueDate),
       is_done: isDone,
       position: nextPos,
     })
@@ -152,7 +153,7 @@ export async function updateTaskAction(id: string, input: Partial<TaskInput>) {
     payload.is_done = input.status === "done";
   }
   if (input.dueDate !== undefined) {
-    payload.due_date = input.dueDate ? new Date(input.dueDate).toISOString() : null;
+    payload.due_date = parseTaskDueDateToIso(input.dueDate);
   }
 
   const { data, error } = await supabase

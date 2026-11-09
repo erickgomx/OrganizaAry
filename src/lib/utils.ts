@@ -204,4 +204,79 @@ export function formatDateTimeForInput(dateStr?: string | null): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
+/**
+ * Converte data de prazo de tarefas (formato "YYYY-MM-DD" do input type="date")
+ * para string ISO 8601 UTC de forma segura ao meio-dia UTC (12:00:00Z).
+ * Isso impede que fusos horários locais (como o do Brasil UTC-03:00) desloquem a data
+ * para o dia anterior ou posterior ao salvar ou ler.
+ */
+export function parseTaskDueDateToIso(dateStr?: string | null): string | null {
+  if (!dateStr || !dateStr.trim()) return null;
+  const clean = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    return `${clean}T12:00:00.000Z`;
+  }
+  if (clean.includes("T")) {
+    const datePart = clean.split("T")[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      return `${datePart}T12:00:00.000Z`;
+    }
+  }
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * Formata data de prazo para o input HTML5 type="date" ("YYYY-MM-DD"),
+ * imune a perdas de dia decorrentes de conversão de fuso horário.
+ */
+export function formatTaskDueDateForInput(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const clean = dateStr.trim();
+  if (clean.includes("T")) {
+    const datePart = clean.split("T")[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+      return datePart;
+    }
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(clean)) {
+    return clean;
+  }
+  const d = new Date(clean);
+  if (isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Formata data de prazo de tarefas para exibição amigável ("20 de nov." ou "20 nov").
+ */
+export function formatTaskDueDateDisplay(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  const datePart = formatTaskDueDateForInput(dateStr);
+  if (!datePart) return "";
+  const [year, month, day] = datePart.split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const date = new Date(year, month - 1, day, 12, 0, 0);
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  }).format(date);
+}
+
+/**
+ * Verifica se a tarefa está com o prazo vencido no final do dia estipulado.
+ */
+export function isTaskOverdue(dueDateStr: string | null | undefined, isDone: boolean): boolean {
+  if (!dueDateStr || isDone) return false;
+  const datePart = formatTaskDueDateForInput(dueDateStr);
+  if (!datePart) return false;
+  const [year, month, day] = datePart.split("-").map(Number);
+  if (!year || !month || !day) return false;
+  const due = new Date(year, month - 1, day, 23, 59, 59, 999);
+  return due < new Date();
+}
+
 

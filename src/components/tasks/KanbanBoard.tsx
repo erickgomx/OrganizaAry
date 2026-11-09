@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Clock,
+  Calendar,
   CheckCircle2,
   Circle,
   AlertTriangle,
@@ -29,6 +30,7 @@ import {
 } from "@/actions/tasks";
 import { TaskPriority, TaskStatus } from "@/types/database";
 import { parseTaskDescription } from "@/lib/checklist";
+import { formatTaskDueDateDisplay, isTaskOverdue } from "@/lib/utils";
 
 const TaskModal = dynamic(
   () => import("./TaskModal").then((m) => m.TaskModal),
@@ -155,18 +157,11 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
   };
 
   const isOverdue = (dueDateStr: string | null, isDone: boolean) => {
-    if (!dueDateStr || isDone) return false;
-    const due = new Date(dueDateStr);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return due < today;
+    return isTaskOverdue(dueDateStr, isDone);
   };
 
   const formatDate = (dateStr: string) => {
-    return new Intl.DateTimeFormat("pt-BR", {
-      day: "2-digit",
-      month: "short",
-    }).format(new Date(dateStr));
+    return formatTaskDueDateDisplay(dateStr);
   };
 
   const filteredTasks = tasks.filter((t) => {
@@ -418,24 +413,35 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                                 <span>{priority.label}</span>
                               </span>
 
-                              {/* Due Date Indicator */}
-                              {task.due_date && (
-                                <span
-                                  className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md tabular-nums ${
-                                    overdue
-                                      ? "bg-[#261514] text-[#e06b63] font-medium border border-[#4a2420]"
-                                      : "text-[#968a9c]"
-                                  }`}
-                                  title={overdue ? "Tarefa Atrasada!" : "Data limite"}
-                                >
-                                  {overdue ? (
-                                    <AlertTriangle className="w-2.5 h-2.5 text-[#e06b63]" />
-                                  ) : (
-                                    <Clock className="w-2.5 h-2.5" />
-                                  )}
-                                  <span>{formatDate(task.due_date)}</span>
-                                </span>
-                              )}
+                              {/* Due Date Indicator / Alter Date Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingTask(task);
+                                  setIsModalOpen(true);
+                                }}
+                                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md tabular-nums transition-colors ${
+                                  overdue
+                                    ? "bg-[#261514] text-[#e06b63] font-medium border border-[#4a2420] hover:bg-[#341b1a]"
+                                    : task.due_date
+                                    ? "text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#231c29]"
+                                    : "text-[#6e6375] hover:text-[#9873a1] hover:bg-[#231c29]"
+                                }`}
+                                title={
+                                  overdue
+                                    ? "Tarefa Atrasada! Clique para alterar a data"
+                                    : task.due_date
+                                    ? "Clique para alterar a data limite"
+                                    : "Definir data limite"
+                                }
+                              >
+                                {overdue ? (
+                                  <AlertTriangle className="w-2.5 h-2.5 text-[#e06b63] shrink-0" />
+                                ) : (
+                                  <Calendar className="w-2.5 h-2.5 text-[#9873a1] shrink-0" />
+                                )}
+                                <span>{task.due_date ? formatDate(task.due_date) : "+ Data"}</span>
+                              </button>
                             </div>
 
                             {/* Move Left / Right Buttons */}
@@ -487,7 +493,18 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
           task={editingTask}
           events={events}
           defaultStatus={modalDefaultStatus}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedTask) => {
+            if (savedTask) {
+              setTasks((prev) => {
+                const exists = prev.some((t) => t.id === savedTask.id);
+                if (exists) {
+                  return prev.map((t) => (t.id === savedTask.id ? savedTask : t));
+                }
+                return [savedTask, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
     </div>

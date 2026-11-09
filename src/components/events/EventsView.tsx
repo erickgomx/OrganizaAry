@@ -45,7 +45,7 @@ import {
 } from "@/actions/tasks";
 import { EventStatus } from "@/types/database";
 import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
-import { sanitizeExternalUrl } from "@/lib/utils";
+import { sanitizeExternalUrl, formatTaskDueDateDisplay, isTaskOverdue } from "@/lib/utils";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 import { createClient } from "@/lib/supabase/client";
 
@@ -914,11 +914,33 @@ export function EventsView({
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        {task.due_date && (
-                          <span className="text-xs text-[#968a9c] tabular-nums hidden sm:inline">
-                            Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTask(task);
+                            setIsTaskModalOpen(true);
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs tabular-nums transition-colors border ${
+                            isTaskOverdue(task.due_date, task.is_done)
+                              ? "bg-[#261514] text-[#e06b63] border-[#4a2420] font-medium hover:bg-[#341b1a]"
+                              : task.due_date
+                              ? "bg-[#1a151f] hover:bg-[#231c29] border-[#33293c] text-[#bba0c1] hover:text-[#f4eff5]"
+                              : "text-[#6e6375] hover:text-[#9873a1] border-transparent hover:border-[#33293c]"
+                          }`}
+                          title="Clique para alterar a data de entrega"
+                        >
+                          <Calendar className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+                          <span className="hidden sm:inline">
+                            {task.due_date
+                              ? `Entrega: ${formatTaskDueDateDisplay(task.due_date)}`
+                              : "Definir data"}
                           </span>
-                        )}
+                          <span className="sm:hidden">
+                            {task.due_date
+                              ? formatTaskDueDateDisplay(task.due_date)
+                              : "Data"}
+                          </span>
+                        </button>
 
                         <div className="relative">
                           <button
@@ -1050,7 +1072,18 @@ export function EventsView({
             title: e.title,
             clientName: e.client?.name,
           }))}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedTask) => {
+            if (savedTask) {
+              setTasks((prev) => {
+                const exists = prev.some((t) => t.id === savedTask.id);
+                if (exists) {
+                  return prev.map((t) => (t.id === savedTask.id ? savedTask : t));
+                }
+                return [savedTask, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
 

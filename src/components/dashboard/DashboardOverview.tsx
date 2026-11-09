@@ -20,6 +20,7 @@ import {
 import { EventWithClientInfo, deleteEventAction } from "@/actions/events";
 import { TaskWithDetails, toggleTaskDoneAction, deleteTaskAction } from "@/actions/tasks";
 import { parseTaskDescription } from "@/lib/checklist";
+import { formatTaskDueDateDisplay, isTaskOverdue } from "@/lib/utils";
 
 const EventModal = dynamic(
   () => import("@/components/events/EventModal").then((m) => m.EventModal),
@@ -61,6 +62,7 @@ export function DashboardOverview({
   }, [initialTasks]);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskWithDetails | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<{ id: string; title: string } | null>(null);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const [deletingTask, setDeletingTask] = useState<{ id: string; title: string } | null>(null);
@@ -154,7 +156,10 @@ export function DashboardOverview({
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsTaskModalOpen(true)}
+            onClick={() => {
+              setEditingTask(null);
+              setIsTaskModalOpen(true);
+            }}
             type="button"
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#33293c] bg-[#1a151f] hover:bg-[#231c29] text-[#f4eff5] text-xs font-medium transition-colors"
           >
@@ -290,7 +295,10 @@ export function DashboardOverview({
               Tarefas ({pendingTasks.length})
             </h3>
             <button
-              onClick={() => setIsTaskModalOpen(true)}
+              onClick={() => {
+                setEditingTask(null);
+                setIsTaskModalOpen(true);
+              }}
               type="button"
               className="text-xs text-[#9873a1] hover:text-[#bba0c1] font-medium transition-colors"
             >
@@ -305,7 +313,10 @@ export function DashboardOverview({
                 Tudo entregue! Nenhuma tarefa pendente.
               </p>
               <button
-                onClick={() => setIsTaskModalOpen(true)}
+                onClick={() => {
+                  setEditingTask(null);
+                  setIsTaskModalOpen(true);
+                }}
                 className="text-xs text-[#9873a1] hover:underline font-medium"
               >
                 + Criar nova tarefa
@@ -356,11 +367,30 @@ export function DashboardOverview({
                     </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {task.due_date && (
-                      <span className="text-[10px] text-[#968a9c] tabular-nums">
-                        Entrega: {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(task.due_date))}
-                      </span>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTask(task);
+                        setIsTaskModalOpen(true);
+                      }}
+                      className={`text-[10px] tabular-nums inline-flex items-center gap-1 px-1.5 py-0.5 rounded border transition-colors ${
+                        isTaskOverdue(task.due_date, task.is_done)
+                          ? "bg-[#261514] text-[#e06b63] border-[#4a2420] hover:bg-[#341b1a]"
+                          : task.due_date
+                          ? "text-[#968a9c] hover:text-[#f4eff5] border-[#33293c] bg-[#1a151f] hover:bg-[#231c29]"
+                          : "text-[#6e6375] hover:text-[#9873a1] border-transparent hover:border-[#33293c]"
+                      }`}
+                      title={
+                        isTaskOverdue(task.due_date, task.is_done)
+                          ? "Tarefa Atrasada! Clique para alterar a data"
+                          : task.due_date
+                          ? "Clique para alterar a data limite"
+                          : "Definir data limite"
+                      }
+                    >
+                      <Calendar className="w-2.5 h-2.5 text-[#9873a1] shrink-0" />
+                      <span>{task.due_date ? formatTaskDueDateDisplay(task.due_date) : "+ Data"}</span>
+                    </button>
                     <button
                       onClick={() => setDeletingTask({ id: task.id, title: task.title })}
                       type="button"
@@ -409,13 +439,28 @@ export function DashboardOverview({
       {isTaskModalOpen && (
         <TaskModal
           isOpen={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setEditingTask(null);
+          }}
+          task={editingTask}
           events={events.map((e) => ({
             id: e.id,
             title: e.title,
             clientName: e.client?.name,
           }))}
-          onSuccess={() => router.refresh()}
+          onSuccess={(savedTask) => {
+            if (savedTask) {
+              setTasks((prev) => {
+                const exists = prev.some((t) => t.id === savedTask.id);
+                if (exists) {
+                  return prev.map((t) => (t.id === savedTask.id ? savedTask : t));
+                }
+                return [savedTask, ...prev];
+              });
+            }
+            router.refresh();
+          }}
         />
       )}
 

@@ -25,7 +25,7 @@ import {
 } from "@/actions/tasks";
 import { TaskPriority, TaskStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { handleFormKeyDownEnterToNextField } from "@/lib/utils";
+import { handleFormKeyDownEnterToNextField, formatTaskDueDateForInput } from "@/lib/utils";
 import {
   TaskChecklistItem,
   parseTaskDescription,
@@ -49,7 +49,7 @@ interface TaskModalProps {
   events: SimpleEventOption[];
   defaultStatus?: TaskStatus;
   defaultEventId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (savedTask?: TaskWithDetails) => void;
 }
 
 export function TaskModal({
@@ -64,14 +64,7 @@ export function TaskModal({
   const isEditing = Boolean(task);
 
   const getInitialDueDate = () => {
-    if (task?.due_date) {
-      const d = new Date(task.due_date);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    }
-    return "";
+    return formatTaskDueDateForInput(task?.due_date);
   };
 
   const initialParsed = parseTaskDescription(task?.description);
@@ -169,15 +162,18 @@ export function TaskModal({
     };
 
     try {
+      let savedTask: TaskWithDetails | undefined;
       if (isEditing && task) {
         const res = await updateTaskAction(task.id, submissionData);
         if (res.error) throw new Error(res.error);
+        savedTask = res.data;
       } else {
         const res = await createTaskAction(submissionData);
         if (res.error) throw new Error(res.error);
+        savedTask = res.data;
       }
 
-      onSuccess?.();
+      onSuccess?.(savedTask);
       onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao salvar tarefa.";
@@ -297,17 +293,28 @@ export function TaskModal({
           </div>
 
           <div>
-            <label htmlFor="task-due-date" className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider mb-1.5">
-              Data Limite (Prazo de Entrega)
-            </label>
-            <div className="relative flex items-center">
-              <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6e6375] pointer-events-none shrink-0" />
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="task-due-date" className="flex items-center gap-1.5 text-[11px] font-medium text-[#968a9c] uppercase tracking-wider">
+                <Calendar className="w-3.5 h-3.5 text-[#9873a1] shrink-0" />
+                <span>Data Limite (Prazo de Entrega)</span>
+              </label>
+              {formData.dueDate && (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, dueDate: null })}
+                  className="text-[10px] text-[#6e6375] hover:text-[#d48970] transition-colors"
+                >
+                  Limpar data
+                </button>
+              )}
+            </div>
+            <div className="relative">
               <input
                 id="task-due-date"
                 type="date"
                 value={formData.dueDate || ""}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value || null })}
-                className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 pl-10 pr-3.5 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark]"
+                className="w-full min-h-[42px] rounded-xl border border-[#33293c] bg-[#120e15] py-2.5 px-3.5 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors [color-scheme:dark] cursor-pointer"
               />
             </div>
           </div>
