@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-[#120e15] text-[#f4eff5] pb-20 md:pb-12 selection:bg-[#9873a1]/20 selection:text-[#bba0c1]">
       <AppNavbar profile={profile} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
         <DashboardOverview
           events={events}
           tasks={tasks}

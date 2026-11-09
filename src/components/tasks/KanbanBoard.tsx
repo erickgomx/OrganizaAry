@@ -280,17 +280,25 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.96 }}
                           transition={{ duration: 0.15 }}
-                          className={`group rounded-xl border p-3.5 space-y-2.5 shadow-sm transition-all ${
+                          onClick={() => {
+                            setEditingTask(task);
+                            setIsModalOpen(true);
+                          }}
+                          className={`group rounded-xl border p-3.5 space-y-2.5 shadow-sm transition-all cursor-pointer select-none ${
                             task.is_done
                               ? "border-[#231c29] bg-[#120e15] opacity-70"
-                              : "border-[#33293c] bg-[#1a151f] hover:border-[#33293c] hover:bg-[#1a151f]"
+                              : "border-[#33293c] bg-[#1a151f] hover:border-[#9873a1]/60 hover:bg-[#1f1925]"
                           }`}
+                          title="Toque em cima para alterar esta tarefa"
                         >
                           {/* Card Top Row: Checkbox, Title & Menu */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-start gap-2.5 flex-1">
                               <button
-                                onClick={() => handleToggleDone(task.id, task.is_done)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleDone(task.id, task.is_done);
+                                }}
                                 type="button"
                                 className="mt-0.5 text-[#6e6375] hover:text-[#9873a1] transition-colors shrink-0"
                                 title={task.is_done ? "Marcar como não concluída" : "Marcar como concluída"}
@@ -353,18 +361,22 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
 
                             <div className="relative">
                               <button
-                                onClick={() =>
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setActiveMenuId(
                                     activeMenuId === task.id ? null : task.id
-                                  )
-                                }
+                                  );
+                                }}
                                 className="p-1 rounded text-[#6e6375] hover:text-[#f4eff5] transition-colors"
                               >
                                 <MoreVertical className="w-3.5 h-3.5" />
                               </button>
 
                               {activeMenuId === task.id && (
-                                <div className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5">
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute right-0 top-6 z-20 w-32 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-xl text-xs space-y-0.5"
+                                >
                                   <button
                                     onClick={() => {
                                       setEditingTask(task);
@@ -448,9 +460,10 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
                             <div className="flex items-center gap-0.5">
                               {colIndex > 0 && (
                                 <button
-                                  onClick={() =>
-                                    handleMoveColumn(task.id, columns[colIndex - 1].id)
-                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveColumn(task.id, columns[colIndex - 1].id);
+                                  }}
                                   className="p-1 rounded bg-[#231c29] text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#33293c] transition-colors"
                                   title={`Mover para ${columns[colIndex - 1].title}`}
                                 >
@@ -460,9 +473,10 @@ export function KanbanBoard({ initialTasks, events }: KanbanBoardProps) {
 
                               {colIndex < columns.length - 1 && (
                                 <button
-                                  onClick={() =>
-                                    handleMoveColumn(task.id, columns[colIndex + 1].id)
-                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveColumn(task.id, columns[colIndex + 1].id);
+                                  }}
                                   className="p-1 rounded bg-[#231c29] text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#33293c] transition-colors"
                                   title={`Mover para ${columns[colIndex + 1].title}`}
                                 >

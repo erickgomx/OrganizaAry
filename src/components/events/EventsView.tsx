@@ -854,16 +854,24 @@ export function EventsView({
                 return (
                   <div
                     key={task.id}
-                    className={`rounded-2xl border p-4 transition-all shadow-sm ${
+                    onClick={() => {
+                      setEditingTask(task);
+                      setIsTaskModalOpen(true);
+                    }}
+                    className={`rounded-2xl border p-4 transition-all shadow-sm cursor-pointer select-none ${
                       task.is_done
                         ? "border-[#231c29] bg-[#120e15] opacity-65"
-                        : "border-[#33293c] bg-[#120e15] hover:border-[#33293c] hover:bg-[#1a151f]"
+                        : "border-[#33293c] bg-[#120e15] hover:border-[#9873a1]/60 hover:bg-[#1a151f]"
                     }`}
+                    title="Toque em cima para alterar esta tarefa"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3.5 flex-1 min-w-0">
                         <button
-                          onClick={() => handleToggleTask(task.id, task.is_done)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleTask(task.id, task.is_done);
+                          }}
                           type="button"
                           className="text-[#6e6375] hover:text-[#9fc193] transition-colors shrink-0"
                           title={task.is_done ? "Desmarcar conclusão" : "Concluir tarefa"}
@@ -889,7 +897,10 @@ export function EventsView({
                             {checklist.length > 0 && (
                               <button
                                 type="button"
-                                onClick={() => toggleChecklistExpand(task.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleChecklistExpand(task.id);
+                                }}
                                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#231c29] border border-[#33293c] text-[#bba0c1] hover:border-[#9873a1]/40 transition-colors"
                               >
                                 <ListChecks className="w-3 h-3 text-[#9873a1]" />
