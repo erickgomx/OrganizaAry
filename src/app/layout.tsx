@@ -23,6 +23,12 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "OrganizaAry | EAREC Produtora Audiovisual",
   description: "Gestão inteligente de captações, clientes e pós-produção. EAREC Produtora Audiovisual.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "OrganizaAry",
+  },
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",

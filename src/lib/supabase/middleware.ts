@@ -14,8 +14,8 @@ export async function updateSession(request: NextRequest) {
       pathname === "/favicon.ico" ||
       isStaticFile;
 
-    // Fast-path: Skip Supabase auth calls completely for static assets & internal Next.js requests
-    if (isPublicAsset) {
+    // Fast-path: Skip Supabase auth calls completely for static assets, internal Next.js requests, and cron endpoints
+    if (isPublicAsset || pathname.startsWith("/api/cron/")) {
       return supabaseResponse;
     }
 

@@ -1,0 +1,25 @@
+{
+  "name": "OrganizaAry | EAREC Produtora Audiovisual",
+  "short_name": "OrganizaAry",
+  "description": "Gestão inteligente de captações, clientes e pós-produção.",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#120e15",
+  "theme_color": "#120e15",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

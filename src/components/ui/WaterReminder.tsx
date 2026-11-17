@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Droplets, Sparkles } from "lucide-react";
+import { BellRing, CheckCircle2, Droplets, Loader2, Sparkles } from "lucide-react";
 
 const STORAGE_KEY = "organiza_ary_last_water_at";
 const PENDING_LOGIN_KEY = "organiza_ary_pending_login_water";
@@ -32,9 +32,54 @@ function writeLastWaterTimestamp(timestamp: number): void {
   }
 }
 
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray.buffer;
+}
+
+async function syncPushSubscription(): Promise<boolean> {
+  const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  if (
+    !vapidPublicKey ||
+    typeof window === "undefined" ||
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window)
+  ) {
+    return false;
+  }
+
+  const registration = await navigator.serviceWorker.register("/sw.js");
+  await navigator.serviceWorker.ready;
+
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    });
+  }
+
+  const response = await fetch("/api/push/subscribe", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(subscription.toJSON()),
+  });
+
+  return response.ok;
+}
+
 export function WaterReminder() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [pushState, setPushState] = useState<
+    "idle" | "subscribing" | "enabled" | "denied" | "unsupported"
+  >("idle");
 
   const isAuthPage = pathname === "/login";
 
@@ -51,6 +96,25 @@ export function WaterReminder() {
 
     if (now - lastWaterAt >= REMINDER_INTERVAL_MS) {
       setIsOpen(true);
+
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState !== "visible" &&
+        "Notification" in window &&
+        Notification.permission === "granted" &&
+        "serviceWorker" in navigator
+      ) {
+        navigator.serviceWorker.ready
+          .then((registration) =>
+            registration.showNotification("Beba agua Ary!", {
+              body: "Já se passaram 30 minutos. Hora de se hidratar!",
+              icon: "/logo.png",
+              badge: "/logo.png",
+              tag: "water-reminder",
+            })
+          )
+          .catch(() => {});
+      }
     }
   }, [isAuthPage]);
 
@@ -125,14 +189,63 @@ export function WaterReminder() {
     document.addEventListener("visibilitychange", handleVisibilityOrFocus);
     window.addEventListener("storage", handleStorage);
 
+    // Sync Service Worker & Push status asynchronously
+    const initPushTimer = window.setTimeout(() => {
+      if (
+        !("serviceWorker" in navigator) ||
+        !("PushManager" in window) ||
+        !("Notification" in window) ||
+        !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      ) {
+        setPushState("unsupported");
+        return;
+      }
+
+      if (Notification.permission === "denied") {
+        setPushState("denied");
+        return;
+      }
+
+      if (Notification.permission === "granted") {
+        syncPushSubscription()
+          .then((ok) => setPushState(ok ? "enabled" : "idle"))
+          .catch(() => setPushState("idle"));
+        return;
+      }
+
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }, 0);
+
     return () => {
       window.clearTimeout(exactTimeout);
+      window.clearTimeout(initPushTimer);
       window.clearInterval(interval);
       window.removeEventListener("focus", handleVisibilityOrFocus);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
       window.removeEventListener("storage", handleStorage);
     };
   }, [evaluateReminder, isAuthPage, isOpen]);
+
+  const handleEnablePush = async () => {
+    if (!("Notification" in window)) {
+      setPushState("unsupported");
+      return;
+    }
+
+    try {
+      setPushState("subscribing");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushState(permission === "denied" ? "denied" : "idle");
+        return;
+      }
+
+      const ok = await syncPushSubscription();
+      setPushState(ok ? "enabled" : "idle");
+    } catch {
+      setPushState("idle");
+    }
+  };
 
   const handleAlreadyDrank = () => {
     writeLastWaterTimestamp(Date.now());
@@ -177,7 +290,7 @@ export function WaterReminder() {
           </p>
         </div>
 
-        <div className="pt-1">
+        <div className="space-y-2.5 pt-1">
           <button
             type="button"
             onClick={handleAlreadyDrank}
@@ -187,6 +300,37 @@ export function WaterReminder() {
             <Droplets className="w-4 h-4" />
             <span>já bebi</span>
           </button>
+
+          {pushState === "idle" && (
+            <button
+              type="button"
+              onClick={handleEnablePush}
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-sky-400/30 bg-[#231c29] hover:bg-[#2c2334] text-sky-300 font-medium text-xs transition-colors cursor-pointer"
+            >
+              <BellRing className="w-3.5 h-3.5" />
+              <span>Ativar notificações no celular</span>
+            </button>
+          )}
+
+          {pushState === "subscribing" && (
+            <div className="w-full inline-flex items-center justify-center gap-2 py-2 text-xs text-sky-300">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Ativando notificações...</span>
+            </div>
+          )}
+
+          {pushState === "enabled" && (
+            <div className="w-full inline-flex items-center justify-center gap-1.5 py-1.5 text-[11px] text-emerald-300/90">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Notificações no celular ativadas</span>
+            </div>
+          )}
+
+          {pushState === "denied" && (
+            <p className="text-[11px] text-[#968a9c]">
+              Notificações bloqueadas no navegador. Libere nas configurações do site para receber no celular.
+            </p>
+          )}
         </div>
       </div>
     </div>
