@@ -1,13 +1,8 @@
 import { google } from "googleapis";
 import { createClient } from "@/lib/supabase/server";
+import { GOOGLE_OAUTH_SCOPES } from "./scopes";
 
-export const GOOGLE_OAUTH_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/calendar",
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/userinfo.profile",
-  "openid",
-];
+export { GOOGLE_OAUTH_SCOPES };
 
 export function getBaseUrl(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) {

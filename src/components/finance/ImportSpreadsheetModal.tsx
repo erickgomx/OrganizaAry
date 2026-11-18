@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Trash2,
+  Link2,
 } from "lucide-react";
 import {
   parseCaixaSpreadsheet,
@@ -16,6 +17,9 @@ import {
 } from "@/lib/finance/spreadsheet-parser";
 import { formatFinanceDateDisplay } from "@/lib/finance/calculations";
 import { bulkImportTransactionsAction } from "@/actions/finance";
+import { previewGoogleSheetAction } from "@/actions/google";
+import { createClient } from "@/lib/supabase/client";
+import { GOOGLE_OAUTH_SCOPES_STRING } from "@/lib/google/scopes";
 import { FinancialTransactionWithEvent } from "@/types/database";
 import { formatBRL } from "@/lib/utils";
 
@@ -31,6 +35,10 @@ export function ImportSpreadsheetModal({
   onSuccess,
 }: ImportSpreadsheetModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sourceTab, setSourceTab] = useState<"file" | "google">("file");
+  const [googleSheetUrl, setGoogleSheetUrl] = useState("");
+  const [requiresGoogleAuth, setRequiresGoogleAuth] = useState(false);
+  const [isAuthorizingGoogle, setIsAuthorizingGoogle] = useState(false);
   const [defaultYear, setDefaultYear] = useState<number>(2026);
   const [fileName, setFileName] = useState<string>("");
   const [parsedRows, setParsedRows] = useState<ParsedSpreadsheetTransaction[]>([]);
@@ -42,6 +50,73 @@ export function ImportSpreadsheetModal({
   const [isDragging, setIsDragging] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleAuthorizeGoogle = async () => {
+    try {
+      setIsAuthorizingGoogle(true);
+      const supabase = createClient();
+      const { data, error: authErr } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+            window.location.pathname
+          )}`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          scopes: GOOGLE_OAUTH_SCOPES_STRING,
+        },
+      });
+      if (authErr) throw authErr;
+      if (data?.url) window.location.href = data.url;
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível abrir a autorização do Google."
+      );
+      setIsAuthorizingGoogle(false);
+    }
+  };
+
+  const handleFetchGoogleSheet = async () => {
+    if (!googleSheetUrl.trim()) {
+      setError("Cole o link ou ID da Planilha Google.");
+      return;
+    }
+
+    setError(null);
+    setRequiresGoogleAuth(false);
+    setIsParsing(true);
+    setParsedRows([]);
+
+    try {
+      const res = await previewGoogleSheetAction(googleSheetUrl, defaultYear);
+      if (!res.success) {
+        setRequiresGoogleAuth(Boolean(res.requiresAuth));
+        setError(res.error);
+        return;
+      }
+
+      setFileName(res.spreadsheetTitle);
+      setParsedRows(res.transactions);
+      setWarnings(res.warnings);
+      setSheetsRead(res.sheetsRead);
+
+      if (res.transactions.length === 0) {
+        setError(
+          "Não foi possível localizar lançamentos válidos nessa Planilha Google. Verifique se há colunas de Data, Descrição e Entrada/Saída."
+        );
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Erro ao ler Planilha Google."
+      );
+    } finally {
+      setIsParsing(false);
+    }
+  };
 
   const processFile = async (file: File) => {
     setError(null);
@@ -141,7 +216,43 @@ export function ImportSpreadsheetModal({
         </div>
 
         <div className="space-y-4 overflow-y-auto pr-1 flex-1">
-          {/* Ano padrão de referência + Dropzone */}
+          {/* Seletor de origem: Arquivo local ou Google Planilhas */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#120e15] border border-[#33293c]">
+            <button
+              type="button"
+              onClick={() => {
+                setSourceTab("file");
+                setError(null);
+                setRequiresGoogleAuth(false);
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                sourceTab === "file"
+                  ? "bg-[#231c29] text-[#bba0c1] border border-[#33293c] shadow-sm"
+                  : "text-[#968a9c] hover:text-[#f4eff5]"
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Arquivo (.xlsx / .csv)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSourceTab("google");
+                setError(null);
+                setRequiresGoogleAuth(false);
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                sourceTab === "google"
+                  ? "bg-[#162017] text-[#9fc193] border border-[#273829] shadow-sm"
+                  : "text-[#968a9c] hover:text-[#f4eff5]"
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              <span>Google Planilhas (Link)</span>
+            </button>
+          </div>
+
+          {/* Ano padrão de referência */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-[#33293c] bg-[#120e15] p-3">
             <div className="space-y-0.5">
               <p className="text-xs font-medium text-[#f4eff5]">
@@ -167,51 +278,101 @@ export function ImportSpreadsheetModal({
             </div>
           </div>
 
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-all ${
-              isDragging
-                ? "border-[#9873a1] bg-[#231c29]/60"
-                : "border-[#33293c] bg-[#120e15]/70 hover:border-[#9873a1]/60 hover:bg-[#120e15]"
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            {isParsing ? (
-              <div className="flex flex-col items-center gap-2 py-2">
-                <Loader2 className="w-6 h-6 text-[#9873a1] animate-spin" />
-                <p className="text-xs text-[#bba0c1]">Lendo planilhas...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-xl bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[#bba0c1]">
-                  <Upload className="w-5 h-5" />
+          {sourceTab === "file" ? (
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`rounded-2xl border-2 border-dashed p-6 text-center cursor-pointer transition-all ${
+                isDragging
+                  ? "border-[#9873a1] bg-[#231c29]/60"
+                  : "border-[#33293c] bg-[#120e15]/70 hover:border-[#9873a1]/60 hover:bg-[#120e15]"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              {isParsing ? (
+                <div className="flex flex-col items-center gap-2 py-2">
+                  <Loader2 className="w-6 h-6 text-[#9873a1] animate-spin" />
+                  <p className="text-xs text-[#bba0c1]">Lendo planilhas...</p>
                 </div>
-                <p className="text-xs font-medium text-[#f4eff5]">
-                  {fileName ? `Arquivo: ${fileName}` : "Clique ou arraste sua planilha (.xlsx) aqui"}
-                </p>
-                <p className="text-[11px] text-[#6e6375]">
-                  Processamento 100% local antes de salvar no seu banco
-                </p>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[#bba0c1]">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-medium text-[#f4eff5]">
+                    {fileName ? `Arquivo: ${fileName}` : "Clique ou arraste sua planilha (.xlsx) aqui"}
+                  </p>
+                  <p className="text-[11px] text-[#6e6375]">
+                    Processamento 100% local antes de salvar no seu banco
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-[#33293c] bg-[#120e15] p-4 space-y-3">
+              <label
+                htmlFor="google-sheet-url"
+                className="block text-[11px] font-medium text-[#968a9c] uppercase tracking-wider"
+              >
+                Link ou ID da Planilha Google
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  id="google-sheet-url"
+                  type="text"
+                  value={googleSheetUrl}
+                  onChange={(e) => setGoogleSheetUrl(e.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/..."
+                  className="flex-1 rounded-xl border border-[#33293c] bg-[#1a151f] px-3 py-2 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleFetchGoogleSheet}
+                  disabled={isParsing}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#9fc193] hover:bg-[#b5d4aa] text-[#120e15] text-xs font-semibold transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+                >
+                  {isParsing ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                  )}
+                  <span>Buscar da Planilha</span>
+                </button>
               </div>
-            )}
-          </div>
+              <p className="text-[11px] text-[#6e6375]">
+                A planilha precisa estar acessível na sua conta Google conectada ao OrganizaAry.
+              </p>
+            </div>
+          )}
 
           {error && (
-            <div className="rounded-xl bg-[#261514] p-3 text-xs text-[#e06b63] border border-[#4a2420] flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="rounded-xl bg-[#261514] p-3 text-xs text-[#e06b63] border border-[#4a2420] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+              {requiresGoogleAuth && (
+                <button
+                  type="button"
+                  onClick={handleAuthorizeGoogle}
+                  disabled={isAuthorizingGoogle}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-[11px] font-semibold shrink-0 cursor-pointer"
+                >
+                  {isAuthorizingGoogle && <Loader2 className="w-3 h-3 animate-spin" />}
+                  <span>Autorizar Google Planilhas</span>
+                </button>
+              )}
             </div>
           )}
 

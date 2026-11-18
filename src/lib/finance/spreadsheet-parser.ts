@@ -338,30 +338,25 @@ function shouldIgnoreDescription(desc: string): boolean {
   return false;
 }
 
+export interface SheetMatrixInput {
+  name: string;
+  rows: unknown[][];
+}
+
 /**
- * Lê um arquivo .xlsx (estrutura da planilha `caixa EA REC.xlsx`) e converte em lançamentos normalizados.
+ * Converte matrizes de abas (de .xlsx ou Google Sheets API) em lançamentos normalizados.
  */
-export function parseCaixaSpreadsheet(
-  fileBuffer: ArrayBuffer,
+export function parseSpreadsheetMatrices(
+  sheets: SheetMatrixInput[],
   defaultYear = 2026
 ): SpreadsheetParseResult {
-  const workbook = XLSX.read(fileBuffer, { type: "array", cellDates: false });
   const transactions: ParsedSpreadsheetTransaction[] = [];
   const warnings: string[] = [];
   const sheetsRead: string[] = [];
   let skippedRows = 0;
 
-  for (const sheetName of workbook.SheetNames) {
-    const sheet = workbook.Sheets[sheetName];
-    if (!sheet) continue;
-
-    const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-      header: 1,
-      defval: "",
-      blankrows: false,
-    });
-
-    if (!rows.length) continue;
+  for (const { name: sheetName, rows } of sheets) {
+    if (!rows || !rows.length) continue;
 
     const sheetHint = detectMonthAndYearHint(sheetName);
     let currentMonth = sheetHint.month || 1;
@@ -542,4 +537,28 @@ export function parseCaixaSpreadsheet(
     sheetsRead,
     warnings,
   };
+}
+
+/**
+ * Lê um arquivo .xlsx (estrutura da planilha `caixa EA REC.xlsx`) e converte em lançamentos normalizados.
+ */
+export function parseCaixaSpreadsheet(
+  fileBuffer: ArrayBuffer,
+  defaultYear = 2026
+): SpreadsheetParseResult {
+  const workbook = XLSX.read(fileBuffer, { type: "array", cellDates: false });
+  const matrices: SheetMatrixInput[] = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    if (!sheet) continue;
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+    });
+    matrices.push({ name: sheetName, rows });
+  }
+
+  return parseSpreadsheetMatrices(matrices, defaultYear);
 }

@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { GOOGLE_OAUTH_SCOPES_STRING } from "@/lib/google/scopes";
 import { SignOutButton } from "./SignOutButton";
 
 const UserGuideModal = dynamic(
@@ -55,13 +56,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
             access_type: "offline",
             prompt: "consent",
           },
-          scopes: [
-            "https://www.googleapis.com/auth/calendar.events",
-            "https://www.googleapis.com/auth/calendar",
-            "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "openid",
-          ].join(" "),
+          scopes: GOOGLE_OAUTH_SCOPES_STRING,
         },
       });
 

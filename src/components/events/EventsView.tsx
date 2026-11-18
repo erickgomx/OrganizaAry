@@ -48,6 +48,7 @@ import { SlideToConfirm } from "@/components/ui/SlideToConfirm";
 import { sanitizeExternalUrl, formatTaskDueDateDisplay, isTaskOverdue } from "@/lib/utils";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 import { createClient } from "@/lib/supabase/client";
+import { GOOGLE_OAUTH_SCOPES_STRING } from "@/lib/google/scopes";
 
 const EventModal = dynamic(
   () => import("./EventModal").then((m) => m.EventModal),
@@ -134,13 +135,7 @@ export function EventsView({
             access_type: "offline",
             prompt: "consent",
           },
-          scopes: [
-            "https://www.googleapis.com/auth/calendar.events",
-            "https://www.googleapis.com/auth/calendar",
-            "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "openid",
-          ].join(" "),
+          scopes: GOOGLE_OAUTH_SCOPES_STRING,
         },
       });
 

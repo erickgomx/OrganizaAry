@@ -7,6 +7,18 @@ import { getEventById } from "./events";
 import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
 import { createGoogleMeetForEvent } from "@/lib/google/meet";
 import { getAuthenticatedGoogleClient } from "@/lib/google/auth";
+import {
+  readGoogleSpreadsheetTransactions,
+  exportFinanceToGoogleSheet,
+} from "@/lib/google/sheets";
+import {
+  calculateFinancialSummary,
+  calculatePillarDivision,
+  filterTransactionsByPeriod,
+  MONTH_NAMES_PT,
+} from "@/lib/finance/calculations";
+import { getFinancialDataAction } from "@/actions/finance";
+import { ParsedSpreadsheetTransaction } from "@/lib/finance/spreadsheet-parser";
 
 export type GoogleSyncResult =
   | { success: true; googleEventId: string; htmlLink?: string | null }
@@ -383,5 +395,192 @@ export async function diagnoseGoogleIntegrationAction(): Promise<GoogleDiagnosti
       calendarApiMessage: `Erro inesperado: ${msg}`,
       solutionSteps: ["Tente novamente ou verifique as configurações."],
     };
+  }
+}
+
+export type GoogleSheetPreviewResult =
+  | {
+      success: true;
+      spreadsheetTitle: string;
+      spreadsheetId: string;
+      transactions: ParsedSpreadsheetTransaction[];
+      sheetsRead: string[];
+      warnings: string[];
+    }
+  | {
+      success: false;
+      error: string;
+      requiresAuth?: boolean;
+    };
+
+export type GoogleSheetExportResult =
+  | {
+      success: true;
+      spreadsheetId: string;
+      spreadsheetUrl: string;
+      title: string;
+    }
+  | {
+      success: false;
+      error: string;
+      requiresAuth?: boolean;
+    };
+
+function mapGoogleSheetsError(err: unknown): {
+  error: string;
+  requiresAuth?: boolean;
+} {
+  const msg = err instanceof Error ? err.message : String(err);
+  const lower = msg.toLowerCase();
+
+  if (
+    lower.includes("autorização do google") ||
+    lower.includes("invalid_grant") ||
+    lower.includes("token has been expired or revoked") ||
+    lower.includes("insufficient") ||
+    lower.includes("insufficient authentication scopes") ||
+    lower.includes("access_token_scope_insufficient") ||
+    lower.includes("request had insufficient authentication scopes")
+  ) {
+    return {
+      error:
+        "Permissão do Google Planilhas não autorizada ou expirada. Clique em 'Autorizar Google Planilhas' para conceder acesso.",
+      requiresAuth: true,
+    };
+  }
+
+  if (
+    lower.includes("sheets.googleapis.com") ||
+    lower.includes("google sheets api has not been used") ||
+    lower.includes("accessnotconfigured")
+  ) {
+    return {
+      error:
+        "A Google Sheets API está desativada no seu Google Cloud Console. Ative 'Google Sheets API' na Biblioteca de APIs.",
+    };
+  }
+
+  if (lower.includes("requested entity was not found") || lower.includes("404")) {
+    return {
+      error:
+        "Planilha não encontrada ou sua conta Google não tem acesso a ela. Verifique o link.",
+    };
+  }
+
+  return { error: msg || "Erro ao comunicar com o Google Planilhas." };
+}
+
+export async function previewGoogleSheetAction(
+  urlOrId: string,
+  defaultYear = 2026
+): Promise<GoogleSheetPreviewResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Não autenticado." };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.google_refresh_token && !profile?.google_access_token) {
+      return {
+        success: false,
+        error: "Conta Google não conectada.",
+        requiresAuth: true,
+      };
+    }
+
+    const result = await readGoogleSpreadsheetTransactions(
+      user.id,
+      urlOrId,
+      defaultYear
+    );
+
+    return {
+      success: true,
+      spreadsheetTitle: result.spreadsheetTitle,
+      spreadsheetId: result.spreadsheetId,
+      transactions: result.transactions,
+      sheetsRead: result.sheetsRead,
+      warnings: result.warnings,
+    };
+  } catch (err: unknown) {
+    const mapped = mapGoogleSheetsError(err);
+    return { success: false, ...mapped };
+  }
+}
+
+export async function exportToGoogleSheetAction(params: {
+  month: number | "all";
+  year: number;
+}): Promise<GoogleSheetExportResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Não autenticado." };
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("google_refresh_token, google_access_token")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile?.google_refresh_token && !profile?.google_access_token) {
+      return {
+        success: false,
+        error: "Conta Google não conectada.",
+        requiresAuth: true,
+      };
+    }
+
+    const financeData = await getFinancialDataAction();
+    if (financeData.schemaMissing) {
+      return {
+        success: false,
+        error: "Execute a migration SQL do módulo financeiro antes de exportar.",
+      };
+    }
+
+    const periodTransactions = filterTransactionsByPeriod(
+      financeData.transactions,
+      params.month,
+      params.year
+    );
+    const summary = calculateFinancialSummary(periodTransactions);
+    const pillars = calculatePillarDivision(summary.netBalance, financeData.pillars);
+
+    const periodLabel =
+      params.month === "all"
+        ? `Ano Completo (${params.year})`
+        : `${MONTH_NAMES_PT[params.month - 1]} ${params.year}`;
+
+    const result = await exportFinanceToGoogleSheet(user.id, {
+      title: `Caixa EA REC — ${periodLabel}`,
+      periodLabel,
+      transactions: periodTransactions,
+      summary,
+      pillars,
+    });
+
+    return {
+      success: true,
+      ...result,
+    };
+  } catch (err: unknown) {
+    const mapped = mapGoogleSheetsError(err);
+    return { success: false, ...mapped };
   }
 }

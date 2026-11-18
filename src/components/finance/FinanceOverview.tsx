@@ -6,27 +6,27 @@ import { useRouter } from "next/navigation";
 import {
   Wallet,
   Plus,
+  MoreHorizontal,
+  MoreVertical,
   FileSpreadsheet,
-  TrendingUp,
-  TrendingDown,
-  Percent,
-  Sliders,
-  Copy,
-  Check,
+  UploadCloud,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   Search,
   Film,
   Pencil,
   CopyPlus,
   Trash2,
+  Sliders,
+  Copy,
+  Check,
   AlertTriangle,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Calendar,
-  BarChart3,
-  PieChart,
+  ExternalLink,
+  X,
 } from "lucide-react";
 import {
-  FinancialCategory,
   FinancialTransactionType,
   FinancialTransactionWithEvent,
   ProfitPillarRule,
@@ -37,17 +37,21 @@ import {
   calculateFinancialSummary,
   calculateMonthlySeries,
   calculatePillarDivision,
+  extractDateParts,
   filterTransactionsByPeriod,
-  formatFinanceDateDisplay,
   getToggledStatus,
   MONTH_NAMES_PT,
+  MONTH_SHORT_PT,
 } from "@/lib/finance/calculations";
 import {
   createTransactionAction,
   deleteTransactionAction,
   toggleTransactionStatusAction,
 } from "@/actions/finance";
-import { formatBRL } from "@/lib/utils";
+import { exportToGoogleSheetAction } from "@/actions/google";
+import { createClient } from "@/lib/supabase/client";
+import { GOOGLE_OAUTH_SCOPES_STRING } from "@/lib/google/scopes";
+import { formatBRL, sanitizeExternalUrl } from "@/lib/utils";
 import type { SimpleEventOption } from "./TransactionModal";
 
 const TransactionModal = dynamic(
@@ -74,8 +78,6 @@ interface FinanceOverviewProps {
   schemaMissing?: boolean;
 }
 
-const MIGRATION_SQL_HINT = `-- Execute supabase/migrations/20261118_financial_module.sql no Supabase SQL Editor`;
-
 export function FinanceOverview({
   initialTransactions,
   initialPillars,
@@ -83,6 +85,8 @@ export function FinanceOverview({
   schemaMissing = false,
 }: FinanceOverviewProps) {
   const router = useRouter();
+
+  // Estado local sincronizado com as props do servidor (padrão sem useEffect)
   const [transactions, setTransactions] =
     useState<FinancialTransactionWithEvent[]>(initialTransactions);
   const [pillars, setPillars] = useState<ProfitPillarRule[]>(initialPillars);
@@ -94,26 +98,27 @@ export function FinanceOverview({
     setPrevInitialTransactions(initialTransactions);
     setTransactions(initialTransactions);
   }
-
   if (prevInitialPillars !== initialPillars) {
     setPrevInitialPillars(initialPillars);
     setPillars(initialPillars);
   }
 
-  // Filtros de período
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
-  const currentDay = new Date().getDate();
+  // Período
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<number | "all">(currentMonth);
+  const isYearView = selectedMonth === "all";
 
-  // Filtros da tabela
+  // Filtros simples da lista
   const [typeFilter, setTypeFilter] = useState<"all" | FinancialTransactionType>("all");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | FinancialCategory>("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "confirmed" | "Pendente">("all");
+  const [onlyPending, setOnlyPending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-  // Modais e estados auxiliares
+  // Modais, menus e feedbacks
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<FinancialTransactionWithEvent | null>(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -122,39 +127,36 @@ export function FinanceOverview({
     null
   );
   const [isDeletingTx, setIsDeletingTx] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [activeRowMenuId, setActiveRowMenuId] = useState<string | null>(null);
+  const [isYearChartOpen, setIsYearChartOpen] = useState(false);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [requiresGoogleAuth, setRequiresGoogleAuth] = useState(false);
+  const [isExportingGoogle, setIsExportingGoogle] = useState(false);
+  const [exportedSheetInfo, setExportedSheetInfo] = useState<{
+    url: string;
+    title: string;
+  } | null>(null);
 
-  const availableYears = useMemo(() => {
-    const years = new Set<number>([2025, 2026, 2027, currentYear]);
-    for (const tx of transactions) {
-      const y = Number(tx.date?.slice(0, 4));
-      if (y >= 2020 && y <= 2100) years.add(y);
-    }
-    return Array.from(years).sort((a, b) => a - b);
-  }, [transactions, currentYear]);
-
-  // Transações do período selecionado (para KPIs, Pilares e Composição)
+  // Dados derivados
   const periodTransactions = useMemo(
     () => filterTransactionsByPeriod(transactions, selectedMonth, selectedYear),
     [transactions, selectedMonth, selectedYear]
   );
 
-  // Transações filtradas para a tabela (período + tipo + categoria + status + busca)
-  const filteredTransactions = useMemo(() => {
+  const visibleTransactions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return periodTransactions
       .filter((tx) => {
         if (typeFilter !== "all" && tx.type !== typeFilter) return false;
-        if (categoryFilter !== "all" && tx.category !== categoryFilter) return false;
-        if (statusFilter === "confirmed" && tx.status === "Pendente") return false;
-        if (statusFilter === "Pendente" && tx.status !== "Pendente") return false;
+        if (onlyPending && tx.status !== "Pendente") return false;
         if (q) {
-          const matchesDesc = tx.description.toLowerCase().includes(q);
-          const matchesEvent = tx.event?.title?.toLowerCase().includes(q);
-          const matchesClient = tx.event?.client?.name?.toLowerCase().includes(q);
-          if (!matchesDesc && !matchesEvent && !matchesClient) return false;
+          const hay = [tx.description, tx.event?.title, tx.event?.client?.name, tx.category]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!hay.includes(q)) return false;
         }
         return true;
       })
@@ -162,7 +164,7 @@ export function FinanceOverview({
         if (a.date !== b.date) return b.date.localeCompare(a.date);
         return (b.created_at || "").localeCompare(a.created_at || "");
       });
-  }, [periodTransactions, typeFilter, categoryFilter, statusFilter, searchQuery]);
+  }, [periodTransactions, typeFilter, onlyPending, searchQuery]);
 
   const summary = useMemo(
     () => calculateFinancialSummary(periodTransactions),
@@ -180,74 +182,103 @@ export function FinanceOverview({
   );
 
   const maxMonthlyValue = useMemo(() => {
-    let maxVal = 100;
-    for (const point of monthlySeries) {
-      const inc = point.confirmedIncome + point.pendingIncome;
-      const exp = point.paidExpenses + point.pendingExpenses;
-      if (inc > maxVal) maxVal = inc;
-      if (exp > maxVal) maxVal = exp;
+    let maxVal = 1;
+    for (const p of monthlySeries) {
+      maxVal = Math.max(
+        maxVal,
+        p.confirmedIncome + p.pendingIncome,
+        p.paidExpenses + p.pendingExpenses
+      );
     }
     return maxVal;
   }, [monthlySeries]);
 
-  const periodLabel =
-    selectedMonth === "all"
-      ? `Ano Completo (${selectedYear})`
-      : `${MONTH_NAMES_PT[selectedMonth - 1]} ${selectedYear}`;
+  const pendingCount = periodTransactions.filter((t) => t.status === "Pendente").length;
 
-  // Toggle otimista do badge de status (1 clique)
+  const periodLabel = isYearView
+    ? `Ano de ${selectedYear}`
+    : `${MONTH_NAMES_PT[(selectedMonth as number) - 1]} ${selectedYear}`;
+
+  const defaultModalDate = isYearView
+    ? `${selectedYear}-${String(currentMonth).padStart(2, "0")}-${String(currentDay).padStart(2, "0")}`
+    : `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-${String(
+        Math.min(currentDay, new Date(selectedYear, selectedMonth as number, 0).getDate())
+      ).padStart(2, "0")}`;
+
+  // Navegação de período
+  const goToPreviousPeriod = () => {
+    if (isYearView) {
+      setSelectedYear((y) => y - 1);
+      return;
+    }
+    const m = selectedMonth as number;
+    if (m === 1) {
+      setSelectedMonth(12);
+      setSelectedYear((y) => y - 1);
+    } else {
+      setSelectedMonth(m - 1);
+    }
+  };
+
+  const goToNextPeriod = () => {
+    if (isYearView) {
+      setSelectedYear((y) => y + 1);
+      return;
+    }
+    const m = selectedMonth as number;
+    if (m === 12) {
+      setSelectedMonth(1);
+      setSelectedYear((y) => y + 1);
+    } else {
+      setSelectedMonth(m + 1);
+    }
+  };
+
+  const isCurrentPeriod = isYearView
+    ? selectedYear === currentYear
+    : selectedYear === currentYear && selectedMonth === currentMonth;
+
+  // Ações
+  const openNewTransaction = () => {
+    setEditingTx(null);
+    setIsTxModalOpen(true);
+  };
+
   const handleToggleStatus = async (tx: FinancialTransactionWithEvent) => {
     const previousStatus = tx.status;
     const optimisticStatus = getToggledStatus(tx.status, tx.type);
     setActionError(null);
 
     setTransactions((prev) =>
-      prev.map((item) =>
-        item.id === tx.id ? { ...item, status: optimisticStatus } : item
-      )
+      prev.map((item) => (item.id === tx.id ? { ...item, status: optimisticStatus } : item))
     );
 
     try {
       const res = await toggleTransactionStatusAction(tx.id, previousStatus, tx.type);
-      if (res.error) {
-        throw new Error(res.error);
-      }
+      if (res.error) throw new Error(res.error);
       if (res.data) {
-        setTransactions((prev) =>
-          prev.map((item) => (item.id === tx.id ? res.data! : item))
-        );
+        const saved = res.data;
+        setTransactions((prev) => prev.map((item) => (item.id === tx.id ? saved : item)));
       }
       router.refresh();
     } catch (err: unknown) {
-      // Rollback em caso de erro
       setTransactions((prev) =>
-        prev.map((item) =>
-          item.id === tx.id ? { ...item, status: previousStatus } : item
-        )
+        prev.map((item) => (item.id === tx.id ? { ...item, status: previousStatus } : item))
       );
-      setActionError(
-        err instanceof Error ? err.message : "Erro ao atualizar status do lançamento."
-      );
+      setActionError(err instanceof Error ? err.message : "Erro ao atualizar status.");
     }
   };
 
-  // Duplicar para o próximo mês (otimista após retorno ou imediato com ID temporário)
   const handleDuplicateNextMonth = async (tx: FinancialTransactionWithEvent) => {
-    setDuplicatingId(tx.id);
     setActionError(null);
     const nextDate = addMonthsToIsoDate(tx.date, 1);
     const tempId = `temp-${Date.now()}`;
+    const nowIso = new Date().toISOString();
 
-    const optimisticTx: FinancialTransactionWithEvent = {
-      ...tx,
-      id: tempId,
-      date: nextDate,
-      status: "Pendente",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    setTransactions((prev) => [optimisticTx, ...prev]);
+    setTransactions((prev) => [
+      { ...tx, id: tempId, date: nextDate, status: "Pendente", created_at: nowIso, updated_at: nowIso },
+      ...prev,
+    ]);
 
     try {
       const res = await createTransactionAction({
@@ -259,22 +290,13 @@ export function FinanceOverview({
         status: "Pendente",
         eventId: tx.event_id,
       });
-
-      if (res.error || !res.data) {
-        throw new Error(res.error || "Falha ao duplicar lançamento.");
-      }
-
-      setTransactions((prev) =>
-        prev.map((item) => (item.id === tempId ? res.data! : item))
-      );
+      if (res.error || !res.data) throw new Error(res.error || "Falha ao duplicar.");
+      const saved = res.data;
+      setTransactions((prev) => prev.map((item) => (item.id === tempId ? saved : item)));
       router.refresh();
     } catch (err: unknown) {
       setTransactions((prev) => prev.filter((item) => item.id !== tempId));
-      setActionError(
-        err instanceof Error ? err.message : "Erro ao duplicar lançamento."
-      );
-    } finally {
-      setDuplicatingId(null);
+      setActionError(err instanceof Error ? err.message : "Erro ao duplicar lançamento.");
     }
   };
 
@@ -288,14 +310,13 @@ export function FinanceOverview({
 
     const res = await deleteTransactionAction(deletingTx.id);
     setIsDeletingTx(false);
+    setDeletingTx(null);
 
     if (res.success) {
-      setDeletingTx(null);
       router.refresh();
     } else {
       setTransactions(backup);
       setActionError(res.error || "Erro ao excluir lançamento.");
-      setDeletingTx(null);
     }
   };
 
@@ -310,746 +331,654 @@ export function FinanceOverview({
       setCopiedWhatsApp(true);
       setTimeout(() => setCopiedWhatsApp(false), 2500);
     } catch {
-      setActionError("Não foi possível copiar para a área de transferência.");
+      setActionError("Não foi possível copiar o resumo.");
     }
   };
 
-  const totalCostsForBreakdown = summary.totalFixedCosts + summary.totalVariableCosts;
-  const fixedPercent =
-    totalCostsForBreakdown > 0
-      ? (summary.totalFixedCosts / totalCostsForBreakdown) * 100
-      : 0;
-  const variablePercent =
-    totalCostsForBreakdown > 0
-      ? (summary.totalVariableCosts / totalCostsForBreakdown) * 100
-      : 0;
+  const handleAuthorizeGoogleSheets = async () => {
+    try {
+      const supabase = createClient();
+      const { data, error: authErr } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+            window.location.pathname
+          )}`,
+          queryParams: { access_type: "offline", prompt: "consent" },
+          scopes: GOOGLE_OAUTH_SCOPES_STRING,
+        },
+      });
+      if (authErr) throw authErr;
+      if (data?.url) window.location.href = data.url;
+    } catch (err: unknown) {
+      setActionError(
+        err instanceof Error ? err.message : "Não foi possível abrir a autorização do Google."
+      );
+    }
+  };
 
-  const defaultModalDate =
-    selectedMonth === "all"
-      ? `${selectedYear}-${String(currentMonth).padStart(2, "0")}-${String(
-          currentDay
-        ).padStart(2, "0")}`
-      : `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-${String(
-          Math.min(currentDay, new Date(selectedYear, selectedMonth, 0).getDate())
-        ).padStart(2, "0")}`;
+  const handleExportToGoogleSheets = async () => {
+    setIsMoreMenuOpen(false);
+    setIsExportingGoogle(true);
+    setActionError(null);
+    setRequiresGoogleAuth(false);
+    setExportedSheetInfo(null);
+
+    try {
+      const res = await exportToGoogleSheetAction({
+        month: selectedMonth,
+        year: selectedYear,
+      });
+      if (!res.success) {
+        setRequiresGoogleAuth(Boolean(res.requiresAuth));
+        setActionError(res.error);
+        return;
+      }
+      setExportedSheetInfo({ url: res.spreadsheetUrl, title: res.title });
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : "Erro ao exportar para o Google.");
+    } finally {
+      setIsExportingGoogle(false);
+    }
+  };
+
+  const totalCosts = summary.totalFixedCosts + summary.totalVariableCosts;
+  const fixedPercent = totalCosts > 0 ? (summary.totalFixedCosts / totalCosts) * 100 : 0;
+  const exportedUrl = exportedSheetInfo ? sanitizeExternalUrl(exportedSheetInfo.url) : undefined;
 
   return (
-    <div className="space-y-6">
-      {/* Aviso caso as tabelas ainda não tenham sido criadas no Supabase */}
+    <div className="space-y-5">
+      {/* ── Avisos (aparecem só quando necessário) ── */}
       {schemaMissing && (
-        <div className="rounded-2xl border border-[#ff9e3b]/30 bg-[#211a14] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-[#ffb066] shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-[#ffb066]">
-                Tabelas financeiras ainda não detectadas no Supabase
-              </p>
-              <p className="text-[11px] text-[#d1c8d4]">
-                Execute a migration{" "}
-                <code className="px-1 py-0.5 rounded bg-black/30 text-[#bba0c1]">
-                  supabase/migrations/20261118_financial_module.sql
-                </code>{" "}
-                no SQL Editor do Supabase para salvar seus lançamentos e regras.
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-mono text-[#ffb066]/80 shrink-0">
-            {MIGRATION_SQL_HINT}
-          </span>
+        <div className="rounded-xl border border-[#ff9e3b]/30 bg-[#211a14] px-4 py-3 flex items-start gap-2.5 text-xs">
+          <AlertTriangle className="w-4 h-4 text-[#ffb066] shrink-0 mt-0.5" />
+          <p className="text-[#d1c8d4]">
+            Falta configurar o banco. Rode a migration{" "}
+            <code className="px-1 rounded bg-black/30 text-[#bba0c1]">20261118_financial_module.sql</code>{" "}
+            no Supabase para salvar lançamentos.
+          </p>
         </div>
       )}
 
       {actionError && (
-        <div className="rounded-xl border border-[#4a2420] bg-[#261514] px-4 py-3 text-xs text-[#e06b63] flex items-center justify-between gap-2">
+        <div className="rounded-xl border border-[#4a2420] bg-[#261514] px-4 py-2.5 text-xs text-[#e06b63] flex items-center justify-between gap-3">
           <span>{actionError}</span>
-          <button
-            type="button"
-            onClick={() => setActionError(null)}
-            className="text-[11px] underline hover:text-white"
-          >
-            Fechar
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {requiresGoogleAuth && (
+              <button
+                type="button"
+                onClick={handleAuthorizeGoogleSheets}
+                className="px-2.5 py-1 rounded-lg bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-[11px] font-semibold cursor-pointer"
+              >
+                Autorizar Google
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setActionError(null);
+                setRequiresGoogleAuth(false);
+              }}
+              className="p-1 rounded hover:bg-white/5"
+              aria-label="Fechar aviso"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Header & Ações Principais */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#33293c] pb-5">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-[#9873a1]" />
-            <h1 className="text-xl sm:text-2xl font-semibold text-[#f4eff5] tracking-tight">
-              Financeiro EA REC
-            </h1>
-          </div>
-          <p className="text-xs sm:text-sm text-[#968a9c]">
-            Fluxo de caixa, cálculo de lucro líquido e divisão automática dos pilares.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#33293c] bg-[#1a151f] hover:bg-[#231c29] text-[#f4eff5] text-xs font-medium transition-colors cursor-pointer active:scale-95 shadow-sm"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-[#9fc193]" />
-            <span>Importar Planilha (.xlsx)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setEditingTx(null);
-              setIsTxModalOpen(true);
-            }}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Novo Lançamento</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Barra de Período (Mês / Ano Completo) e Filtros */}
-      <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 space-y-3.5 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          {/* Seletor de Mês + Ano Completo */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 mr-1 text-xs font-medium text-[#968a9c]">
-              <Calendar className="w-3.5 h-3.5 text-[#9873a1]" />
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="rounded-lg border border-[#33293c] bg-[#120e15] px-2.5 py-1 text-xs font-semibold text-[#bba0c1] focus:border-[#9873a1] focus:outline-none"
+      {exportedSheetInfo && (
+        <div className="rounded-xl border border-[#273829] bg-[#162017] px-4 py-2.5 text-xs text-[#9fc193] flex items-center justify-between gap-3">
+          <span className="truncate">Planilha criada no seu Google Drive.</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {exportedUrl && (
+              <a
+                href={exportedUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#9fc193] hover:bg-[#b5d4aa] text-[#120e15] text-[11px] font-semibold"
               >
-                {availableYears.map((yr) => (
-                  <option key={yr} value={yr}>
-                    {yr}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+                Abrir <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
             <button
               type="button"
-              onClick={() => setSelectedMonth("all")}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                selectedMonth === "all"
-                  ? "bg-[#9873a1] text-[#120e15] border-[#9873a1]"
-                  : "bg-[#120e15] text-[#968a9c] border-[#33293c] hover:text-[#f4eff5] hover:bg-[#231c29]"
-              }`}
+              onClick={() => setExportedSheetInfo(null)}
+              className="p-1 rounded hover:bg-white/5"
+              aria-label="Fechar aviso"
             >
-              Ano Completo ({selectedYear})
+              <X className="w-3.5 h-3.5" />
             </button>
+          </div>
+        </div>
+      )}
 
-            {MONTH_NAMES_PT.map((name, idx) => {
-              const m = idx + 1;
-              const active = selectedMonth === m;
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setSelectedMonth(m)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
-                    active
-                      ? "bg-[#231c29] text-[#bba0c1] border-[#9873a1]/70 font-semibold shadow-sm"
-                      : "bg-[#120e15] text-[#968a9c] border-[#33293c] hover:text-[#f4eff5] hover:bg-[#1a151f]"
-                  }`}
-                >
-                  {name.slice(0, 3)}
-                </button>
-              );
-            })}
+      {/* ── Cabeçalho: título, período e ações ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#33293c] pb-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[#9873a1] shrink-0">
+            <Wallet className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl font-semibold text-[#f4eff5] tracking-tight">
+              Financeiro
+            </h1>
+            <p className="text-xs text-[#968a9c]">Entradas, saídas e divisão do lucro</p>
           </div>
         </div>
 
-        {/* Filtros por Tipo, Categoria, Status e Busca */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-3 border-t border-[#33293c]/60">
-          {/* Tipo */}
-          <div className="lg:col-span-3 inline-flex rounded-xl bg-[#120e15] border border-[#33293c] p-0.5 text-[11px]">
-            {(
-              [
-                { value: "all", label: "Todos" },
-                { value: "entrada", label: "Entradas" },
-                { value: "saida", label: "Saídas" },
-              ] as const
-            ).map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setTypeFilter(opt.value)}
-                className={`flex-1 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                  typeFilter === opt.value
-                    ? "bg-[#231c29] text-[#bba0c1] font-semibold shadow-sm"
-                    : "text-[#968a9c] hover:text-[#f4eff5]"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Categoria */}
-          <div className="lg:col-span-3">
-            <select
-              value={categoryFilter}
-              onChange={(e) =>
-                setCategoryFilter(e.target.value as "all" | FinancialCategory)
-              }
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] px-3 py-2 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none"
+        <div className="flex items-center gap-2">
+          {/* Menu "Mais" com importar/exportar */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsMoreMenuOpen((v) => !v)}
+              disabled={isExportingGoogle}
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-[#33293c] bg-[#1a151f] hover:bg-[#231c29] text-[#968a9c] hover:text-[#f4eff5] transition-colors cursor-pointer disabled:opacity-60"
+              aria-label="Mais opções"
+              title="Importar ou exportar planilha"
             >
-              <option value="all">Todas as categorias</option>
-              <option value="Receita">Receita</option>
-              <option value="Custo Fixo">Custo Fixo</option>
-              <option value="Custo Variável">Custo Variável</option>
-            </select>
+              {isExportingGoogle ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <MoreHorizontal className="w-4 h-4" />
+              )}
+            </button>
+
+            {isMoreMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setIsMoreMenuOpen(false)} />
+                <div className="absolute right-0 top-11 z-40 w-60 rounded-xl border border-[#33293c] bg-[#1a151f] p-1.5 shadow-2xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      setIsImportModalOpen(true);
+                    }}
+                    className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-[#231c29] transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-[#9fc193] mt-0.5 shrink-0" />
+                    <span>
+                      <span className="block text-xs font-medium text-[#f4eff5]">Importar planilha</span>
+                      <span className="block text-[11px] text-[#6e6375]">Arquivo .xlsx ou link do Google</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportToGoogleSheets}
+                    className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-[#231c29] transition-colors"
+                  >
+                    <UploadCloud className="w-4 h-4 text-[#bba0c1] mt-0.5 shrink-0" />
+                    <span>
+                      <span className="block text-xs font-medium text-[#f4eff5]">Exportar para Google Planilhas</span>
+                      <span className="block text-[11px] text-[#6e6375]">{periodLabel}</span>
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Status */}
-          <div className="lg:col-span-2">
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(
-                  e.target.value as "all" | "confirmed" | "Pendente"
-                )
-              }
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] px-3 py-2 text-xs text-[#f4eff5] focus:border-[#9873a1]/60 focus:outline-none"
-            >
-              <option value="all">Todos os status</option>
-              <option value="confirmed">Confirmados</option>
-              <option value="Pendente">Pendentes</option>
-            </select>
-          </div>
-
-          {/* Busca */}
-          <div className="lg:col-span-4 relative flex items-center">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#6e6375] pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar descrição ou trabalho..."
-              className="w-full rounded-xl border border-[#33293c] bg-[#120e15] py-2 pl-9 pr-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={openNewTransaction}
+            className="inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-[#9873a1] hover:bg-[#bba0c1] text-[#120e15] text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo lançamento</span>
+          </button>
         </div>
       </div>
 
-      {/* 4 Cards de KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Entradas Confirmadas */}
-        <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#968a9c]">
-              Entradas Confirmadas
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#162017] border border-[#273829] flex items-center justify-center text-[#9fc193]">
-              <ArrowDownLeft className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-bold text-[#9fc193] tabular-nums">
-            {formatBRL(summary.confirmedIncome)}
-          </p>
-          <p className="text-[11px] text-[#968a9c] tabular-nums">
-            A Receber (Pendente):{" "}
-            <span className="text-[#ffb066] font-medium">
-              {formatBRL(summary.pendingIncome)}
-            </span>
-          </p>
-        </div>
-
-        {/* Saídas Pagas */}
-        <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#968a9c]">
-              Saídas Pagas
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#261514] border border-[#4a2420] flex items-center justify-center text-[#e06b63]">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-bold text-[#e06b63] tabular-nums">
-            {formatBRL(summary.paidExpenses)}
-          </p>
-          <p className="text-[11px] text-[#968a9c] tabular-nums">
-            A Pagar (Pendente):{" "}
-            <span className="text-[#ffb066] font-medium">
-              {formatBRL(summary.pendingExpenses)}
-            </span>
-          </p>
-        </div>
-
-        {/* Saldo Líquido (Lucro) */}
-        <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#968a9c]">
-              Saldo Líquido (Lucro)
-            </span>
-            <div
-              className={`w-7 h-7 rounded-lg border flex items-center justify-center ${
-                summary.netBalance >= 0
-                  ? "bg-[#162017] border-[#273829] text-[#9fc193]"
-                  : "bg-[#261514] border-[#4a2420] text-[#e06b63]"
-              }`}
+      {/* ── Seletor de período compacto ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={goToPreviousPeriod}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#1a151f] transition-colors cursor-pointer"
+            aria-label="Período anterior"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="min-w-[150px] text-center text-sm font-semibold text-[#f4eff5] tabular-nums">
+            {periodLabel}
+          </span>
+          <button
+            type="button"
+            onClick={goToNextPeriod}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#1a151f] transition-colors cursor-pointer"
+            aria-label="Próximo período"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          {!isCurrentPeriod && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedYear(currentYear);
+                setSelectedMonth(isYearView ? "all" : currentMonth);
+              }}
+              className="ml-1 text-[11px] text-[#9873a1] hover:text-[#bba0c1] font-medium cursor-pointer"
             >
-              {summary.netBalance >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
-              ) : (
-                <TrendingDown className="w-4 h-4" />
-              )}
-            </div>
-          </div>
-          <p
-            className={`text-xl sm:text-2xl font-bold tabular-nums ${
-              summary.netBalance >= 0 ? "text-[#9fc193]" : "text-[#e06b63]"
+              Hoje
+            </button>
+          )}
+        </div>
+
+        <div className="inline-flex rounded-lg bg-[#120e15] border border-[#33293c] p-0.5 text-[11px]">
+          <button
+            type="button"
+            onClick={() => setSelectedMonth(isYearView ? currentMonth : selectedMonth)}
+            className={`px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              !isYearView ? "bg-[#231c29] text-[#bba0c1]" : "text-[#968a9c] hover:text-[#f4eff5]"
             }`}
           >
-            {formatBRL(summary.netBalance)}
-          </p>
-          <p className="text-[11px] text-[#968a9c] tabular-nums">
-            Projetado (com pendentes):{" "}
-            <span className="text-[#bba0c1] font-medium">
-              {formatBRL(summary.projectedBalance)}
-            </span>
-          </p>
-        </div>
-
-        {/* Margem Líquida */}
-        <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#968a9c]">
-              Margem Líquida
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[#bba0c1]">
-              <Percent className="w-4 h-4" />
-            </div>
-          </div>
-          <p className="text-xl sm:text-2xl font-bold text-[#f4eff5] tabular-nums">
-            {summary.netMargin.toFixed(1)}%
-          </p>
-          <p className="text-[11px] text-[#968a9c] tabular-nums truncate">
-            Fixo: {formatBRL(summary.paidFixedCosts)} • Var:{" "}
-            {formatBRL(summary.paidVariableCosts)}
-          </p>
+            Mês
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedMonth("all")}
+            className={`px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+              isYearView ? "bg-[#231c29] text-[#bba0c1]" : "text-[#968a9c] hover:text-[#f4eff5]"
+            }`}
+          >
+            Ano
+          </button>
         </div>
       </div>
 
-      {/* Card: Cálculo de Lucro & Divisão dos Pilares */}
-      <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-5 shadow-lg space-y-4">
-        <div className="h-1 bg-gradient-to-r from-[#9873a1] to-[#bba0c1] rounded-full w-full -mt-1" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-[#f4eff5]">
-              Cálculo de Lucro &amp; Divisão dos Pilares — {periodLabel}
-            </h2>
-            <p className="text-[11px] text-[#968a9c] mt-0.5">
-              {summary.netBalance > 0
-                ? `Distribuição automática aplicada sobre o saldo líquido positivo de ${formatBRL(
-                    summary.netBalance
-                  )}.`
-                : "Os pilares serão distribuídos automaticamente assim que o saldo líquido confirmado do período ficar positivo."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsPillarsModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#33293c] bg-[#120e15] hover:bg-[#231c29] text-xs font-medium text-[#bba0c1] hover:text-[#f4eff5] transition-colors cursor-pointer"
-            >
-              <Sliders className="w-3.5 h-3.5 text-[#9873a1]" />
-              <span>Editar %</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCopyWhatsApp}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
-                copiedWhatsApp
-                  ? "bg-[#162017] border-[#273829] text-[#9fc193]"
-                  : "bg-[#120e15] border-[#33293c] hover:bg-[#231c29] text-[#f4eff5]"
-              }`}
-            >
-              {copiedWhatsApp ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 text-[#9fc193]" />
-                  <span>Copiar Resumo WhatsApp</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Barra de proporção visual */}
-        <div className="w-full h-2.5 rounded-full overflow-hidden bg-[#120e15] border border-[#33293c] flex">
-          {pillarDivision.map((pillar) => (
-            <div
-              key={pillar.id}
-              style={{
-                width: `${pillar.percentage}%`,
-                backgroundColor: pillar.color,
-              }}
-              title={`${pillar.name}: ${pillar.percentage}%`}
-              className="h-full transition-all duration-300"
-            />
-          ))}
-        </div>
-
-        {/* Cards individuais dos Pilares */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {pillarDivision.map((pillar) => (
-            <div
-              key={pillar.id}
-              className="rounded-xl border border-[#33293c] bg-[#120e15] p-3.5 space-y-1.5 hover:border-[#9873a1]/50 transition-colors"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: pillar.color }}
-                  />
-                  <span className="text-xs font-medium text-[#d1c8d4] truncate">
-                    {pillar.name}
-                  </span>
-                </div>
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-[#231c29] text-[#bba0c1] tabular-nums shrink-0">
-                  {pillar.percentage}%
-                </span>
-              </div>
-              <p className="text-lg font-bold text-[#f4eff5] tabular-nums">
-                {formatBRL(pillar.amount)}
-              </p>
-            </div>
-          ))}
-        </div>
+      {/* ── 3 números principais ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <SummaryCard
+          label="Entrou"
+          value={summary.confirmedIncome}
+          tone="positive"
+          hint={summary.pendingIncome > 0 ? `+ ${formatBRL(summary.pendingIncome)} a receber` : undefined}
+        />
+        <SummaryCard
+          label="Saiu"
+          value={summary.paidExpenses}
+          tone="negative"
+          hint={summary.pendingExpenses > 0 ? `+ ${formatBRL(summary.pendingExpenses)} a pagar` : undefined}
+        />
+        <SummaryCard
+          label="Lucro"
+          value={summary.netBalance}
+          tone={summary.netBalance >= 0 ? "highlight" : "negative"}
+          hint={summary.confirmedIncome > 0 ? `Margem de ${summary.netMargin.toFixed(0)}%` : undefined}
+        />
       </div>
 
-      {/* Gráfico Mensal (Entradas vs Saídas) & Composição de Custos */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Gráfico Mensal */}
-        <div className="lg:col-span-8 rounded-2xl border border-[#33293c] bg-[#16121b] p-5 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-[#9873a1]" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#f4eff5]">
-                Entradas vs. Saídas ({selectedYear})
-              </h3>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] text-[#968a9c]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#9fc193]" />
-                Entradas
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-[#e06b63]" />
-                Saídas
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-end h-44 pt-4 border-b border-[#33293c]/60 pb-2">
-            {monthlySeries.map((pt) => {
-              const totalInMonth = pt.confirmedIncome + pt.pendingIncome;
-              const totalOutMonth = pt.paidExpenses + pt.pendingExpenses;
-              const inHeight = Math.max(
-                totalInMonth > 0 ? 6 : 0,
-                Math.round((totalInMonth / maxMonthlyValue) * 100)
-              );
-              const outHeight = Math.max(
-                totalOutMonth > 0 ? 6 : 0,
-                Math.round((totalOutMonth / maxMonthlyValue) * 100)
-              );
-              const isActive = selectedMonth === pt.monthIndex;
-
-              return (
+      {/* ── Conteúdo: lista (esquerda) + divisão do lucro (direita) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        {/* Lista de lançamentos */}
+        <section className="lg:col-span-2 rounded-2xl border border-[#33293c] bg-[#16121b] overflow-hidden">
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-[#33293c]">
+            <div className="inline-flex rounded-lg bg-[#120e15] border border-[#33293c] p-0.5 text-[11px]">
+              {(
+                [
+                  { value: "all", label: "Tudo" },
+                  { value: "entrada", label: "Entradas" },
+                  { value: "saida", label: "Saídas" },
+                ] as const
+              ).map((opt) => (
                 <button
-                  key={pt.monthIndex}
+                  key={opt.value}
                   type="button"
-                  onClick={() =>
-                    setSelectedMonth(isActive ? "all" : pt.monthIndex)
-                  }
-                  className={`group flex flex-col items-center justify-end h-full gap-1.5 rounded-lg px-0.5 py-1 transition-colors cursor-pointer ${
-                    isActive
-                      ? "bg-[#231c29]/80 ring-1 ring-[#9873a1]/60"
-                      : "hover:bg-[#1a151f]"
+                  onClick={() => setTypeFilter(opt.value)}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                    typeFilter === opt.value
+                      ? "bg-[#231c29] text-[#bba0c1]"
+                      : "text-[#968a9c] hover:text-[#f4eff5]"
                   }`}
-                  title={`${pt.fullLabel}: Entradas ${formatBRL(
-                    totalInMonth
-                  )} | Saídas ${formatBRL(totalOutMonth)}`}
                 >
-                  <div className="flex items-end justify-center gap-0.5 sm:gap-1 w-full flex-1">
-                    <div
-                      className="w-2 sm:w-2.5 rounded-t bg-[#9fc193]/85 group-hover:bg-[#9fc193] transition-all duration-300"
-                      style={{ height: `${inHeight}%` }}
-                    />
-                    <div
-                      className="w-2 sm:w-2.5 rounded-t bg-[#e06b63]/85 group-hover:bg-[#e06b63] transition-all duration-300"
-                      style={{ height: `${outHeight}%` }}
-                    />
-                  </div>
-                  <span
-                    className={`text-[10px] font-medium ${
-                      isActive ? "text-[#bba0c1] font-bold" : "text-[#968a9c]"
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {pendingCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOnlyPending((v) => !v)}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors cursor-pointer ${
+                    onlyPending
+                      ? "bg-[#211a14] text-[#ffb066] border-[#ff9e3b]/40"
+                      : "border-[#33293c] text-[#968a9c] hover:text-[#f4eff5]"
+                  }`}
+                >
+                  {pendingCount} pendente{pendingCount > 1 ? "s" : ""}
+                </button>
+              )}
+
+              {isSearchOpen ? (
+                <div className="relative flex items-center">
+                  <Search className="absolute left-2.5 w-3.5 h-3.5 text-[#6e6375] pointer-events-none" />
+                  <input
+                    autoFocus
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                    placeholder="Buscar..."
+                    className="w-36 sm:w-44 rounded-lg border border-[#33293c] bg-[#120e15] py-1.5 pl-8 pr-2 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsSearchOpen(true)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#1a151f] cursor-pointer"
+                  aria-label="Buscar lançamento"
+                >
+                  <Search className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {visibleTransactions.length === 0 ? (
+            <div className="px-6 py-14 text-center space-y-3">
+              <div className="w-11 h-11 mx-auto rounded-xl bg-[#1a151f] border border-[#33293c] flex items-center justify-center text-[#6e6375]">
+                <Wallet className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-[#f4eff5]">
+                  {periodTransactions.length === 0
+                    ? "Nada lançado neste período"
+                    : "Nenhum lançamento com esse filtro"}
+                </p>
+                <p className="text-xs text-[#6e6375]">
+                  {periodTransactions.length === 0
+                    ? "Registre uma entrada ou saída para começar."
+                    : "Tente limpar a busca ou trocar o filtro."}
+                </p>
+              </div>
+              {periodTransactions.length === 0 && (
+                <button
+                  type="button"
+                  onClick={openNewTransaction}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#231c29] border border-[#33293c] hover:border-[#9873a1]/60 text-xs font-medium text-[#bba0c1] cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Novo lançamento
+                </button>
+              )}
+            </div>
+          ) : (
+            <ul className="divide-y divide-[#33293c]/60">
+              {visibleTransactions.map((tx) => {
+                const parts = extractDateParts(tx.date);
+                const isIncome = tx.type === "entrada";
+                const isPending = tx.status === "Pendente";
+                const isTemp = tx.id.startsWith("temp-");
+
+                return (
+                  <li
+                    key={tx.id}
+                    className={`group flex items-center gap-3 px-4 py-3 hover:bg-[#1a151f]/70 transition-colors ${
+                      isTemp ? "opacity-60" : ""
                     }`}
                   >
-                    {pt.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-[#6e6375]">
-            Dica: toque em qualquer mês no gráfico para filtrar rapidamente o painel.
-          </p>
-        </div>
+                    {/* Data */}
+                    <div className="w-10 shrink-0 text-center">
+                      <span className="block text-sm font-semibold text-[#f4eff5] tabular-nums leading-none">
+                        {parts ? String(parts.day).padStart(2, "0") : "--"}
+                      </span>
+                      <span className="block text-[10px] uppercase text-[#6e6375] mt-0.5">
+                        {parts ? MONTH_SHORT_PT[parts.month - 1] : ""}
+                      </span>
+                    </div>
 
-        {/* Composição de Custos */}
-        <div className="lg:col-span-4 rounded-2xl border border-[#33293c] bg-[#16121b] p-5 shadow-sm space-y-4 flex flex-col justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-[#9873a1]" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#f4eff5]">
-                Composição de Saídas
-              </h3>
-            </div>
-
-            <div className="space-y-3">
-              {/* Custo Fixo */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#d1c8d4] font-medium">Custo Fixo</span>
-                  <span className="text-[#bba0c1] font-semibold tabular-nums">
-                    {formatBRL(summary.totalFixedCosts)} ({fixedPercent.toFixed(0)}%)
-                  </span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-[#120e15] border border-[#33293c] overflow-hidden">
-                  <div
-                    className="h-full bg-[#9873a1] transition-all duration-300"
-                    style={{ width: `${fixedPercent}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-[#6e6375] tabular-nums">
-                  Pago: {formatBRL(summary.paidFixedCosts)}
-                </p>
-              </div>
-
-              {/* Custo Variável */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#d1c8d4] font-medium">Custo Variável</span>
-                  <span className="text-[#e06b63] font-semibold tabular-nums">
-                    {formatBRL(summary.totalVariableCosts)} ({variablePercent.toFixed(0)}%)
-                  </span>
-                </div>
-                <div className="w-full h-2 rounded-full bg-[#120e15] border border-[#33293c] overflow-hidden">
-                  <div
-                    className="h-full bg-[#e06b63] transition-all duration-300"
-                    style={{ width: `${variablePercent}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-[#6e6375] tabular-nums">
-                  Pago: {formatBRL(summary.paidVariableCosts)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-[#33293c] bg-[#120e15] p-3 flex items-center justify-between text-xs">
-            <span className="text-[#968a9c]">Total de Saídas (Período)</span>
-            <span className="font-bold text-[#f4eff5] tabular-nums">
-              {formatBRL(summary.totalExpenses)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabela de Fluxo de Caixa */}
-      <div className="rounded-2xl border border-[#33293c] bg-[#16121b] shadow-lg overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#33293c] flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#f4eff5]">
-              Fluxo de Caixa — {periodLabel}
-            </h3>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#231c29] border border-[#33293c] text-[#bba0c1] tabular-nums">
-              {filteredTransactions.length}
-            </span>
-          </div>
-          <span className="text-[11px] text-[#6e6375] hidden sm:inline">
-            Clique no badge de status para confirmar recebimento/pagamento em 1 clique
-          </span>
-        </div>
-
-        {filteredTransactions.length === 0 ? (
-          <div className="p-12 text-center space-y-2.5">
-            <Wallet className="w-7 h-7 text-[#6e6375] mx-auto" />
-            <p className="text-xs sm:text-sm font-medium text-[#f4eff5]">
-              Nenhum lançamento encontrado para os filtros selecionados.
-            </p>
-            <div className="flex items-center justify-center gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingTx(null);
-                  setIsTxModalOpen(true);
-                }}
-                className="text-xs text-[#9873a1] hover:underline font-medium cursor-pointer"
-              >
-                + Adicionar lançamento
-              </button>
-              <span className="text-[#33293c]">•</span>
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(true)}
-                className="text-xs text-[#9fc193] hover:underline font-medium cursor-pointer"
-              >
-                Importar planilha .xlsx
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#33293c] bg-[#120e15] text-[10px] uppercase tracking-wider text-[#968a9c]">
-                  <th className="py-3 px-4 font-semibold">Data</th>
-                  <th className="py-3 px-4 font-semibold">Descrição</th>
-                  <th className="py-3 px-4 font-semibold">Categoria</th>
-                  <th className="py-3 px-4 font-semibold text-right">Entrada (R$)</th>
-                  <th className="py-3 px-4 font-semibold text-right">Saída (R$)</th>
-                  <th className="py-3 px-4 font-semibold text-center">Status</th>
-                  <th className="py-3 px-4 font-semibold text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#33293c]/60 text-xs">
-                {filteredTransactions.map((tx) => (
-                  <tr
-                    key={tx.id}
-                    className="hover:bg-[#1a151f]/80 transition-colors group"
-                  >
-                    <td className="py-3 px-4 tabular-nums text-[#968a9c] whitespace-nowrap">
-                      {formatFinanceDateDisplay(tx.date)}
-                    </td>
-
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-medium text-[#f4eff5]">
-                          {tx.description}
-                        </span>
+                    {/* Descrição */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTx(tx);
+                        setIsTxModalOpen(true);
+                      }}
+                      className="flex-1 min-w-0 text-left cursor-pointer"
+                      title="Editar lançamento"
+                    >
+                      <span className="block text-sm text-[#f4eff5] truncate">{tx.description}</span>
+                      <span className="flex items-center gap-1.5 text-[11px] text-[#6e6375] truncate">
+                        <span>{tx.category}</span>
                         {tx.event && (
-                          <span className="inline-flex items-center gap-1 w-fit px-1.5 py-0.5 rounded bg-[#231c29] border border-[#33293c] text-[10px] text-[#bba0c1]">
-                            <Film className="w-2.5 h-2.5 text-[#9873a1]" />
-                            <span>
-                              {tx.event.title}
-                              {tx.event.client?.name ? ` • ${tx.event.client.name}` : ""}
-                            </span>
-                          </span>
+                          <>
+                            <span>·</span>
+                            <Film className="w-3 h-3 text-[#9873a1] shrink-0" />
+                            <span className="truncate">{tx.event.title}</span>
+                          </>
                         )}
-                      </div>
-                    </td>
+                      </span>
+                    </button>
 
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    {/* Valor + status */}
+                    <div className="text-right shrink-0">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium border ${
-                          tx.category === "Receita"
-                            ? "bg-[#162017]/60 text-[#9fc193] border-[#273829]"
-                            : tx.category === "Custo Fixo"
-                            ? "bg-[#231c29] text-[#bba0c1] border-[#33293c]"
-                            : "bg-[#211a14]/80 text-[#d48970] border-[#4a2420]"
+                        className={`block text-sm font-semibold tabular-nums ${
+                          isIncome ? "text-[#9fc193]" : "text-[#e06b63]"
                         }`}
                       >
-                        {tx.category}
+                        {isIncome ? "+" : "−"} {formatBRL(Number(tx.amount))}
                       </span>
-                    </td>
-
-                    <td className="py-3 px-4 text-right tabular-nums whitespace-nowrap font-semibold text-[#9fc193]">
-                      {tx.type === "entrada" ? formatBRL(Number(tx.amount)) : "—"}
-                    </td>
-
-                    <td className="py-3 px-4 text-right tabular-nums whitespace-nowrap font-semibold text-[#e06b63]">
-                      {tx.type === "saida" ? formatBRL(Number(tx.amount)) : "—"}
-                    </td>
-
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
                       <button
                         type="button"
-                        onClick={() => handleToggleStatus(tx)}
-                        title="Clique para alternar entre Pendente e Confirmado"
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all cursor-pointer active:scale-95 ${
-                          tx.status === "Pendente"
-                            ? "bg-[#211a14] text-[#ffb066] border-[#ff9e3b]/30 hover:border-[#ff9e3b]/70"
-                            : tx.status === "Recebido"
-                            ? "bg-[#162017] text-[#9fc193] border-[#273829] hover:border-[#9fc193]/60"
-                            : "bg-[#231c29] text-[#bba0c1] border-[#33293c] hover:border-[#9873a1]"
+                        onClick={() => !isTemp && handleToggleStatus(tx)}
+                        title={isPending ? "Marcar como confirmado" : "Voltar para pendente"}
+                        className={`mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium cursor-pointer transition-colors ${
+                          isPending
+                            ? "text-[#ffb066] hover:text-[#ffc88f]"
+                            : "text-[#6e6375] hover:text-[#968a9c]"
                         }`}
                       >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            tx.status === "Pendente"
-                              ? "bg-[#ffb066]"
-                              : tx.status === "Recebido"
-                              ? "bg-[#9fc193]"
-                              : "bg-[#bba0c1]"
-                          }`}
-                        />
-                        <span>{tx.status}</span>
+                        {isPending ? (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ffb066]" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                        {tx.status}
                       </button>
-                    </td>
+                    </div>
 
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingTx(tx);
-                            setIsTxModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-lg text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#231c29] transition-colors cursor-pointer"
-                          title="Editar lançamento"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                    {/* Menu de ações */}
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setActiveRowMenuId(activeRowMenuId === tx.id ? null : tx.id)}
+                        disabled={isTemp}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-[#6e6375] hover:text-[#f4eff5] hover:bg-[#231c29] sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-all cursor-pointer"
+                        aria-label="Ações do lançamento"
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDuplicateNextMonth(tx)}
-                          disabled={duplicatingId === tx.id}
-                          className="p-1.5 rounded-lg text-[#968a9c] hover:text-[#bba0c1] hover:bg-[#231c29] transition-colors cursor-pointer disabled:opacity-40"
-                          title="Duplicar para o próximo mês"
-                        >
-                          <CopyPlus className="w-3.5 h-3.5" />
-                        </button>
+                      {activeRowMenuId === tx.id && (
+                        <>
+                          <div className="fixed inset-0 z-30" onClick={() => setActiveRowMenuId(null)} />
+                          <div className="absolute right-0 top-8 z-40 w-48 rounded-xl border border-[#33293c] bg-[#1a151f] p-1 shadow-2xl text-xs">
+                            <RowMenuItem
+                              icon={<Pencil className="w-3.5 h-3.5" />}
+                              label="Editar"
+                              onClick={() => {
+                                setActiveRowMenuId(null);
+                                setEditingTx(tx);
+                                setIsTxModalOpen(true);
+                              }}
+                            />
+                            <RowMenuItem
+                              icon={<CopyPlus className="w-3.5 h-3.5" />}
+                              label="Repetir no próximo mês"
+                              onClick={() => {
+                                setActiveRowMenuId(null);
+                                handleDuplicateNextMonth(tx);
+                              }}
+                            />
+                            <RowMenuItem
+                              icon={<Trash2 className="w-3.5 h-3.5" />}
+                              label="Excluir"
+                              danger
+                              onClick={() => {
+                                setActiveRowMenuId(null);
+                                setDeletingTx({ id: tx.id, description: tx.description });
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setDeletingTx({
-                              id: tx.id,
-                              description: tx.description,
-                            })
-                          }
-                          className="p-1.5 rounded-lg text-[#968a9c] hover:text-[#e06b63] hover:bg-[#261514] transition-colors cursor-pointer"
-                          title="Excluir lançamento"
+        {/* Coluna lateral */}
+        <aside className="space-y-5">
+          {/* Divisão do lucro */}
+          <section className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-[#f4eff5]">Divisão do lucro</h2>
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={handleCopyWhatsApp}
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                    copiedWhatsApp
+                      ? "text-[#9fc193] bg-[#162017]"
+                      : "text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#231c29]"
+                  }`}
+                  title={copiedWhatsApp ? "Copiado!" : "Copiar resumo para WhatsApp"}
+                  aria-label="Copiar resumo para WhatsApp"
+                >
+                  {copiedWhatsApp ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPillarsModalOpen(true)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-[#968a9c] hover:text-[#f4eff5] hover:bg-[#231c29] transition-colors cursor-pointer"
+                  title="Editar percentuais"
+                  aria-label="Editar percentuais"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="w-full h-2 rounded-full overflow-hidden bg-[#120e15] flex">
+              {pillarDivision.map((p) => (
+                <div
+                  key={p.id}
+                  style={{ width: `${p.percentage}%`, backgroundColor: p.color }}
+                  className={`h-full ${summary.netBalance > 0 ? "" : "opacity-30"}`}
+                />
+              ))}
+            </div>
+
+            <ul className="space-y-2.5">
+              {pillarDivision.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-2 text-xs">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    <span className="text-[#d1c8d4] truncate">{p.name}</span>
+                    <span className="text-[#6e6375] tabular-nums">{p.percentage}%</span>
+                  </span>
+                  <span className="font-semibold text-[#f4eff5] tabular-nums shrink-0">
+                    {formatBRL(p.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {summary.netBalance <= 0 && (
+              <p className="text-[11px] text-[#6e6375] leading-relaxed">
+                A divisão aparece quando o lucro confirmado do período ficar positivo.
+              </p>
+            )}
+          </section>
+
+          {/* Evolução do ano (recolhível) */}
+          <section className="rounded-2xl border border-[#33293c] bg-[#16121b]">
+            <button
+              type="button"
+              onClick={() => setIsYearChartOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-[#f4eff5] cursor-pointer"
+              aria-expanded={isYearChartOpen}
+            >
+              <span>Evolução de {selectedYear}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-[#968a9c] transition-transform ${isYearChartOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {isYearChartOpen && (
+              <div className="px-4 pb-4 space-y-4">
+                <div className="grid grid-cols-12 gap-1 items-end h-28">
+                  {monthlySeries.map((pt) => {
+                    const inc = pt.confirmedIncome + pt.pendingIncome;
+                    const out = pt.paidExpenses + pt.pendingExpenses;
+                    const isActive = selectedMonth === pt.monthIndex;
+                    return (
+                      <button
+                        key={pt.monthIndex}
+                        type="button"
+                        onClick={() => setSelectedMonth(pt.monthIndex)}
+                        title={`${pt.fullLabel}: entrou ${formatBRL(inc)} · saiu ${formatBRL(out)}`}
+                        className={`flex flex-col items-center justify-end h-full gap-1 rounded-md py-0.5 cursor-pointer transition-colors ${
+                          isActive ? "bg-[#231c29]" : "hover:bg-[#1a151f]"
+                        }`}
+                      >
+                        <div className="flex items-end gap-px flex-1 w-full justify-center">
+                          <div
+                            className="w-1.5 rounded-t-sm bg-[#9fc193]"
+                            style={{ height: `${inc > 0 ? Math.max(4, (inc / maxMonthlyValue) * 100) : 0}%` }}
+                          />
+                          <div
+                            className="w-1.5 rounded-t-sm bg-[#e06b63]"
+                            style={{ height: `${out > 0 ? Math.max(4, (out / maxMonthlyValue) * 100) : 0}%` }}
+                          />
+                        </div>
+                        <span
+                          className={`text-[9px] ${isActive ? "text-[#bba0c1] font-semibold" : "text-[#6e6375]"}`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                          {pt.label.charAt(0)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-3 text-[10px] text-[#968a9c]">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#9fc193]" /> Entradas
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-sm bg-[#e06b63]" /> Saídas
+                  </span>
+                </div>
+
+                {totalCosts > 0 && (
+                  <div className="space-y-1.5 pt-3 border-t border-[#33293c]/60">
+                    <div className="flex justify-between text-[11px] text-[#968a9c]">
+                      <span>Custo fixo {fixedPercent.toFixed(0)}%</span>
+                      <span>Variável {(100 - fixedPercent).toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full overflow-hidden bg-[#e06b63]/70 flex">
+                      <div className="h-full bg-[#9873a1]" style={{ width: `${fixedPercent}%` }} />
+                    </div>
+                    <p className="text-[10px] text-[#6e6375]">Saídas de {periodLabel.toLowerCase()}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </aside>
       </div>
 
-      {/* Modais Lazy-Loaded */}
+      {/* ── Modais ── */}
       {isTxModalOpen && (
         <TransactionModal
           isOpen={isTxModalOpen}
@@ -1063,9 +992,7 @@ export function FinanceOverview({
           onSuccess={(savedItems) => {
             setTransactions((prev) => {
               const byId = new Map(prev.map((t) => [t.id, t]));
-              for (const item of savedItems) {
-                byId.set(item.id, item);
-              }
+              for (const item of savedItems) byId.set(item.id, item);
               return Array.from(byId.values());
             });
             router.refresh();
@@ -1101,12 +1028,66 @@ export function FinanceOverview({
           isOpen={!!deletingTx}
           onClose={() => setDeletingTx(null)}
           isLoading={isDeletingTx}
-          title="Excluir Lançamento"
-          description={`Tem certeza que deseja excluir "${deletingTx.description}" do fluxo de caixa?`}
-          confirmLabel="Sim, Excluir"
+          title="Excluir lançamento"
+          description={`Excluir "${deletingTx.description}"? Essa ação não pode ser desfeita.`}
+          confirmLabel="Excluir"
           onConfirm={handleConfirmDelete}
         />
       )}
     </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: number;
+  tone: "positive" | "negative" | "highlight";
+  hint?: string;
+}) {
+  const valueColor =
+    tone === "positive" ? "text-[#9fc193]" : tone === "negative" ? "text-[#e06b63]" : "text-[#f4eff5]";
+  const cardStyle =
+    tone === "highlight"
+      ? "border-[#9873a1]/40 bg-gradient-to-br from-[#231c29] to-[#16121b]"
+      : "border-[#33293c] bg-[#16121b]";
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3.5 ${cardStyle}`}>
+      <span className="text-xs text-[#968a9c]">{label}</span>
+      <p className={`text-2xl font-bold tabular-nums mt-0.5 ${valueColor}`}>{formatBRL(value)}</p>
+      <p className="text-[11px] text-[#6e6375] tabular-nums h-4">{hint ?? ""}</p>
+    </div>
+  );
+}
+
+function RowMenuItem({
+  icon,
+  label,
+  onClick,
+  danger = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 transition-colors ${
+        danger
+          ? "text-[#d48970] hover:bg-[#261514]"
+          : "text-[#d1c8d4] hover:bg-[#231c29] hover:text-[#f4eff5]"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
