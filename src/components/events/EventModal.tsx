@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2, Calendar, MapPin, User, FileText, CheckCircle, Trash2, ChevronDown } from "lucide-react";
+import { X, Loader2, Calendar, MapPin, User, FileText, CheckCircle, Trash2, ChevronDown, Wallet } from "lucide-react";
 import { createEventAction, updateEventAction, deleteEventAction, EventInput, EventWithClientInfo } from "@/actions/events";
 import { EventStatus } from "@/types/database";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -44,6 +44,9 @@ export function EventModal({
     status: event?.status || "budget_lead",
     price: event?.price !== undefined ? Number(event.price) : 0,
     notes: event?.notes || "",
+    syncToFinance: !isEditing,
+    financeInstallments: 1,
+    financeStatus: "Pendente",
   });
 
   const [displayPrice, setDisplayPrice] = useState<string>(() => {
@@ -78,6 +81,9 @@ export function EventModal({
           status: event.status || "budget_lead",
           price: num,
           notes: event.notes || "",
+          syncToFinance: false,
+          financeInstallments: 1,
+          financeStatus: "Pendente",
         });
         setDisplayPrice(
           num > 0
@@ -96,6 +102,9 @@ export function EventModal({
           status: "budget_lead",
           price: 0,
           notes: "",
+          syncToFinance: true,
+          financeInstallments: 1,
+          financeStatus: "Pendente",
         });
         setDisplayPrice("");
       }
@@ -333,6 +342,102 @@ export function EventModal({
               placeholder="Detalhes de iluminação, lentes necessárias, estilo de cor..."
               className="w-full min-h-[75px] rounded-xl border border-[#33293c] bg-[#120e15] p-3 text-xs text-[#f4eff5] placeholder-[#6e6375] focus:border-[#9873a1]/60 focus:outline-none focus:ring-1 focus:ring-[#9873a1]/20 transition-colors resize-none"
             />
+          </div>
+
+          {/* Integração Opcional com Módulo Financeiro */}
+          <div className="rounded-xl border border-[#33293c] bg-[#120e15] p-3 space-y-2.5">
+            <label className="flex items-center justify-between gap-2 cursor-pointer select-none">
+              <span className="flex items-center gap-2 text-xs font-medium text-[#f4eff5]">
+                <Wallet className="w-3.5 h-3.5 text-[#9fc193]" />
+                <span>Lançar no Financeiro</span>
+              </span>
+              <input
+                type="checkbox"
+                checked={Boolean(formData.syncToFinance)}
+                onChange={(e) =>
+                  setFormData({ ...formData, syncToFinance: e.target.checked })
+                }
+                className="h-4 w-4 rounded border-[#33293c] bg-[#1a151f] accent-[#9873a1] cursor-pointer"
+              />
+            </label>
+
+            {formData.syncToFinance && Number(formData.price) > 0 && (
+              <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-[#33293c]/60">
+                <div>
+                  <span className="block text-[10px] text-[#968a9c] mb-1">
+                    Parcelamento
+                  </span>
+                  <div className="grid grid-cols-2 gap-1 bg-[#1a151f] p-0.5 rounded-lg border border-[#33293c]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, financeInstallments: 1 })
+                      }
+                      className={`py-1 rounded-md text-[10px] font-medium transition-colors ${
+                        (formData.financeInstallments ?? 1) === 1
+                          ? "bg-[#231c29] text-[#bba0c1]"
+                          : "text-[#6e6375] hover:text-[#f4eff5]"
+                      }`}
+                    >
+                      À vista (1x)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, financeInstallments: 2 })
+                      }
+                      className={`py-1 rounded-md text-[10px] font-medium transition-colors ${
+                        formData.financeInstallments === 2
+                          ? "bg-[#231c29] text-[#bba0c1]"
+                          : "text-[#6e6375] hover:text-[#f4eff5]"
+                      }`}
+                    >
+                      1/2 e 2/2
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="block text-[10px] text-[#968a9c] mb-1">
+                    Status inicial
+                  </span>
+                  <div className="grid grid-cols-2 gap-1 bg-[#1a151f] p-0.5 rounded-lg border border-[#33293c]">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, financeStatus: "Pendente" })
+                      }
+                      className={`py-1 rounded-md text-[10px] font-medium transition-colors ${
+                        (formData.financeStatus ?? "Pendente") === "Pendente"
+                          ? "bg-[#211a14] text-[#ffb066]"
+                          : "text-[#6e6375] hover:text-[#f4eff5]"
+                      }`}
+                    >
+                      Pendente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({ ...formData, financeStatus: "Recebido" })
+                      }
+                      className={`py-1 rounded-md text-[10px] font-medium transition-colors ${
+                        formData.financeStatus === "Recebido"
+                          ? "bg-[#162017] text-[#9fc193]"
+                          : "text-[#6e6375] hover:text-[#f4eff5]"
+                      }`}
+                    >
+                      Recebido
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {formData.syncToFinance && (!formData.price || Number(formData.price) <= 0) && (
+              <p className="text-[10px] text-[#6e6375]">
+                Informe um Valor Cobrado maior que R$ 0,00 para criar a receita vinculada.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 text-[11px] text-[#6e6375] px-1">

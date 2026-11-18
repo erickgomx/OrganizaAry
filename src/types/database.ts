@@ -17,6 +17,12 @@ export type TaskPriority = "low" | "medium" | "high" | "urgent";
 
 export type TaskStatus = "todo" | "in_progress" | "done";
 
+export type FinancialTransactionType = "entrada" | "saida";
+
+export type FinancialCategory = "Receita" | "Custo Fixo" | "Custo Variável";
+
+export type FinancialStatus = "Recebido" | "Pago" | "Pendente";
+
 export interface Database {
   public: {
     Tables: {
@@ -237,6 +243,89 @@ export interface Database {
         };
         Relationships: [];
       };
+      financial_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          event_id: string | null;
+          date: string;
+          description: string;
+          type: FinancialTransactionType;
+          category: FinancialCategory;
+          amount: number;
+          status: FinancialStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          event_id?: string | null;
+          date: string;
+          description: string;
+          type: FinancialTransactionType;
+          category: FinancialCategory;
+          amount: number;
+          status: FinancialStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          event_id?: string | null;
+          date?: string;
+          description?: string;
+          type?: FinancialTransactionType;
+          category?: FinancialCategory;
+          amount?: number;
+          status?: FinancialStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      profit_pillar_rules: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          percentage: number;
+          sort_order: number;
+          color: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          percentage: number;
+          sort_order?: number;
+          color: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          percentage?: number;
+          sort_order?: number;
+          color?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -260,6 +349,8 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Client = Database["public"]["Tables"]["clients"]["Row"];
 export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
+export type FinancialTransaction = Database["public"]["Tables"]["financial_transactions"]["Row"];
+export type ProfitPillarRule = Database["public"]["Tables"]["profit_pillar_rules"]["Row"];
 
 export type ClientWithEvents = Client & {
   events?: Event[];
@@ -271,4 +362,15 @@ export type EventWithClient = Event & {
 
 export type TaskWithEvent = Task & {
   event?: Event | null;
+};
+
+export type FinancialTransactionWithEvent = FinancialTransaction & {
+  event?: {
+    id: string;
+    title: string;
+    client?: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
 };

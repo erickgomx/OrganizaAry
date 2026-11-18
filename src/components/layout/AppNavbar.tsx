@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SignOutButton } from "./SignOutButton";
 
@@ -138,6 +138,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
     { href: "/dashboard", label: "Início", icon: LayoutDashboard },
     { href: "/events", label: "Trabalhos", icon: Calendar },
     { href: "/clients", label: "Clientes", icon: Users },
+    { href: "/financeiro", label: "Financeiro", icon: Wallet },
   ];
 
   return (

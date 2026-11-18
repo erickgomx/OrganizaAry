@@ -4,6 +4,7 @@ import { AppNavbar } from "@/components/layout/AppNavbar";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { EventWithClientInfo } from "@/actions/events";
 import { TaskWithDetails } from "@/actions/tasks";
+import { getMonthTransactionsForDashboard } from "@/actions/finance";
 
 export const metadata = {
   title: "Início | OrganizaAry",
@@ -18,9 +19,12 @@ export default async function DashboardPage() {
   }
 
   const supabase = await createClient();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
 
   // Fetch concurrently in parallel
-  const [profile, clientsRes, eventsRes, tasksRes] = await Promise.all([
+  const [profile, clientsRes, eventsRes, tasksRes, financeMonthData] = await Promise.all([
     getAuthenticatedProfile(user.id),
     supabase.from("clients").select("id, name, phone").eq("user_id", user.id),
     supabase
@@ -33,6 +37,7 @@ export default async function DashboardPage() {
       .select("*, event:events(title, client:clients(name))")
       .eq("user_id", user.id)
       .order("due_date", { ascending: true, nullsFirst: false }),
+    getMonthTransactionsForDashboard(currentYear, currentMonth),
   ]);
 
   const clients = (clientsRes.data || []) as { id: string; name: string; phone?: string | null }[];
@@ -51,6 +56,9 @@ export default async function DashboardPage() {
           tasks={tasks}
           clients={clients}
           userName={userName}
+          initialMonthTransactions={financeMonthData.transactions}
+          currentMonth={currentMonth}
+          currentYear={currentYear}
         />
       </main>
     </div>

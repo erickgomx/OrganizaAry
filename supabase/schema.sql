@@ -329,3 +329,121 @@ create policy "Users can delete own tasks"
 on public.tasks for delete
 to authenticated
 using (auth.uid() = user_id);
+
+-- ==============================================================================
+-- 7. FINANCIAL MODULE (Cash Flow & Profit Pillar Rules)
+-- ==============================================================================
+create table if not exists public.financial_transactions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  event_id uuid null references public.events(id) on delete set null,
+  date date not null,
+  description text not null,
+  type text not null check (type in ('entrada', 'saida')),
+  category text not null check (category in ('Receita', 'Custo Fixo', 'Custo Variável')),
+  amount numeric(10,2) not null check (amount >= 0),
+  status text not null check (status in ('Recebido', 'Pago', 'Pendente')),
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_financial_transactions_user_date
+  on public.financial_transactions(user_id, date);
+create index if not exists idx_financial_transactions_event_id
+  on public.financial_transactions(event_id);
+
+drop trigger if exists set_financial_transactions_updated_at on public.financial_transactions;
+create trigger set_financial_transactions_updated_at
+before update on public.financial_transactions
+for each row execute function public.handle_updated_at();
+
+alter table public.financial_transactions enable row level security;
+
+drop policy if exists "Users can view own financial transactions" on public.financial_transactions;
+create policy "Users can view own financial transactions"
+on public.financial_transactions for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own financial transactions" on public.financial_transactions;
+create policy "Users can insert own financial transactions"
+on public.financial_transactions for insert
+to authenticated
+with check (
+  auth.uid() = user_id
+  and (
+    event_id is null
+    or exists (
+      select 1 from public.events
+      where id = event_id and user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "Users can update own financial transactions" on public.financial_transactions;
+create policy "Users can update own financial transactions"
+on public.financial_transactions for update
+to authenticated
+using (auth.uid() = user_id)
+with check (
+  auth.uid() = user_id
+  and (
+    event_id is null
+    or exists (
+      select 1 from public.events
+      where id = event_id and user_id = auth.uid()
+    )
+  )
+);
+
+drop policy if exists "Users can delete own financial transactions" on public.financial_transactions;
+create policy "Users can delete own financial transactions"
+on public.financial_transactions for delete
+to authenticated
+using (auth.uid() = user_id);
+
+create table if not exists public.profit_pillar_rules (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  percentage numeric(5,2) not null check (percentage >= 0 and percentage <= 100),
+  sort_order int not null default 0,
+  color text not null,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_profit_pillar_rules_user_sort
+  on public.profit_pillar_rules(user_id, sort_order);
+
+drop trigger if exists set_profit_pillar_rules_updated_at on public.profit_pillar_rules;
+create trigger set_profit_pillar_rules_updated_at
+before update on public.profit_pillar_rules
+for each row execute function public.handle_updated_at();
+
+alter table public.profit_pillar_rules enable row level security;
+
+drop policy if exists "Users can view own profit pillar rules" on public.profit_pillar_rules;
+create policy "Users can view own profit pillar rules"
+on public.profit_pillar_rules for select
+to authenticated
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own profit pillar rules" on public.profit_pillar_rules;
+create policy "Users can insert own profit pillar rules"
+on public.profit_pillar_rules for insert
+to authenticated
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own profit pillar rules" on public.profit_pillar_rules;
+create policy "Users can update own profit pillar rules"
+on public.profit_pillar_rules for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can delete own profit pillar rules" on public.profit_pillar_rules;
+create policy "Users can delete own profit pillar rules"
+on public.profit_pillar_rules for delete
+to authenticated
+using (auth.uid() = user_id);

@@ -21,6 +21,10 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
+  TrendingUp,
 } from "lucide-react";
 import { EventWithClientInfo, deleteEventAction } from "@/actions/events";
 import {
@@ -29,6 +33,8 @@ import {
   deleteTaskAction,
   toggleTaskChecklistItemAction,
 } from "@/actions/tasks";
+import { FinancialTransactionWithEvent } from "@/types/database";
+import { calculateFinancialSummary, MONTH_NAMES_PT } from "@/lib/finance/calculations";
 import { parseTaskDescription, serializeTaskDescription } from "@/lib/checklist";
 import { formatTaskDueDateDisplay, isTaskOverdue } from "@/lib/utils";
 
@@ -38,6 +44,10 @@ const EventModal = dynamic(
 );
 const TaskModal = dynamic(
   () => import("@/components/tasks/TaskModal").then((m) => m.TaskModal),
+  { ssr: false }
+);
+const TransactionModal = dynamic(
+  () => import("@/components/finance/TransactionModal").then((m) => m.TransactionModal),
   { ssr: false }
 );
 const ConfirmModal = dynamic(
@@ -50,6 +60,9 @@ interface DashboardOverviewProps {
   tasks: TaskWithDetails[];
   clients: { id: string; name: string; phone?: string | null }[];
   userName: string;
+  initialMonthTransactions?: FinancialTransactionWithEvent[];
+  currentMonth?: number;
+  currentYear?: number;
 }
 
 export function DashboardOverview({
@@ -57,10 +70,19 @@ export function DashboardOverview({
   tasks: initialTasks,
   clients,
   userName,
+  initialMonthTransactions = [],
+  currentMonth = new Date().getMonth() + 1,
+  currentYear = new Date().getFullYear(),
 }: DashboardOverviewProps) {
   const router = useRouter();
   const [events, setEvents] = useState<EventWithClientInfo[]>(initialEvents);
   const [tasks, setTasks] = useState<TaskWithDetails[]>(initialTasks);
+  const [monthTransactions, setMonthTransactions] = useState<FinancialTransactionWithEvent[]>(
+    initialMonthTransactions
+  );
+  const [prevInitialMonthTransactions, setPrevInitialMonthTransactions] = useState(
+    initialMonthTransactions
+  );
 
   // Sincroniza estado com as props quando o servidor revalidar dados
   useEffect(() => {
@@ -71,8 +93,14 @@ export function DashboardOverview({
     setTasks(initialTasks);
   }, [initialTasks]);
 
+  if (prevInitialMonthTransactions !== initialMonthTransactions) {
+    setPrevInitialMonthTransactions(initialMonthTransactions);
+    setMonthTransactions(initialMonthTransactions);
+  }
+
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isFinanceModalOpen, setIsFinanceModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventWithClientInfo | null>(null);
   const [editingTask, setEditingTask] = useState<TaskWithDetails | null>(null);
 
@@ -95,6 +123,8 @@ export function DashboardOverview({
 
   const pendingCount = tasks.filter((t) => !t.is_done).length;
   const doneCount = tasks.filter((t) => t.is_done).length;
+  const financeSummary = calculateFinancialSummary(monthTransactions);
+  const currentMonthLabel = `${MONTH_NAMES_PT[currentMonth - 1] || "Mês"} ${currentYear}`;
 
   // Filtro de eventos do lado esquerdo
   const activeEvents = events.filter((e) => e.status !== "finished");
@@ -236,6 +266,96 @@ export function DashboardOverview({
             <Plus className="w-3.5 h-3.5" />
             <span>Novo Trabalho</span>
           </button>
+        </div>
+      </div>
+
+      {/* Card Compacto: Resumo Financeiro do Mês */}
+      <div className="rounded-2xl border border-[#33293c] bg-[#16121b] p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#231c29] border border-[#33293c] flex items-center justify-center text-[#9873a1] shrink-0">
+            <Wallet className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#f4eff5]">
+                Resumo Financeiro do Mês
+              </h3>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#120e15] border border-[#33293c] text-[#968a9c]">
+                {currentMonthLabel}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#968a9c] mt-0.5">
+              Visão rápida de caixa do mês atual
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 flex-1 lg:max-w-xl">
+          <div className="rounded-xl border border-[#33293c]/70 bg-[#120e15] px-3 py-2">
+            <span className="flex items-center gap-1 text-[10px] text-[#968a9c] uppercase">
+              <ArrowDownLeft className="w-3 h-3 text-[#9fc193]" />
+              Entradas
+            </span>
+            <p className="text-xs sm:text-sm font-bold text-[#9fc193] tabular-nums mt-0.5">
+              {formatBRL(financeSummary.confirmedIncome)}
+            </p>
+            {financeSummary.pendingIncome > 0 && (
+              <span className="text-[9px] text-[#ffb066] tabular-nums block">
+                +{formatBRL(financeSummary.pendingIncome)} pendente
+              </span>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[#33293c]/70 bg-[#120e15] px-3 py-2">
+            <span className="flex items-center gap-1 text-[10px] text-[#968a9c] uppercase">
+              <ArrowUpRight className="w-3 h-3 text-[#e06b63]" />
+              Saídas
+            </span>
+            <p className="text-xs sm:text-sm font-bold text-[#e06b63] tabular-nums mt-0.5">
+              {formatBRL(financeSummary.paidExpenses)}
+            </p>
+            {financeSummary.pendingExpenses > 0 && (
+              <span className="text-[9px] text-[#ffb066] tabular-nums block">
+                +{formatBRL(financeSummary.pendingExpenses)} a pagar
+              </span>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[#33293c]/70 bg-[#120e15] px-3 py-2">
+            <span className="flex items-center gap-1 text-[10px] text-[#968a9c] uppercase">
+              <TrendingUp className="w-3 h-3 text-[#bba0c1]" />
+              Saldo
+            </span>
+            <p
+              className={`text-xs sm:text-sm font-bold tabular-nums mt-0.5 ${
+                financeSummary.netBalance >= 0 ? "text-[#9fc193]" : "text-[#e06b63]"
+              }`}
+            >
+              {formatBRL(financeSummary.netBalance)}
+            </p>
+            <span className="text-[9px] text-[#6e6375] tabular-nums block">
+              Margem {financeSummary.netMargin.toFixed(0)}%
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsFinanceModalOpen(true)}
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-[#33293c] bg-[#120e15] hover:bg-[#231c29] text-[#f4eff5] text-xs font-medium transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#9fc193]" />
+            <span>Lançamento</span>
+          </button>
+
+          <Link
+            href="/financeiro"
+            className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#231c29] hover:bg-[#33293c] border border-[#33293c] text-xs font-semibold text-[#bba0c1] hover:text-[#f4eff5] transition-colors"
+          >
+            <span>Financeiro</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
@@ -730,6 +850,29 @@ export function DashboardOverview({
                 }
                 return [savedTask, ...prev];
               });
+            }
+            router.refresh();
+          }}
+        />
+      )}
+
+      {/* Modal Rápido de Lançamento Financeiro */}
+      {isFinanceModalOpen && (
+        <TransactionModal
+          isOpen={isFinanceModalOpen}
+          onClose={() => setIsFinanceModalOpen(false)}
+          events={events.map((e) => ({
+            id: e.id,
+            title: e.title,
+            clientName: e.client?.name || null,
+          }))}
+          onSuccess={(savedItems) => {
+            const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+            const inCurrentMonth = savedItems.filter((item) =>
+              item.date?.startsWith(monthPrefix)
+            );
+            if (inCurrentMonth.length > 0) {
+              setMonthTransactions((prev) => [...inCurrentMonth, ...prev]);
             }
             router.refresh();
           }}

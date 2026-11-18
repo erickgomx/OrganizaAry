@@ -3,9 +3,10 @@
 import { cache } from "react";
 import { revalidatePath } from "next/cache";
 import { createClient, getAuthenticatedUser } from "@/lib/supabase/server";
-import { Event, EventStatus, Client, Database } from "@/types/database";
+import { Event, EventStatus, Client, Database, FinancialStatus } from "@/types/database";
 import { syncEventToGoogleCalendar, deleteGoogleCalendarEvent } from "@/lib/google/calendar";
 import { parseEventDateToIso } from "@/lib/utils";
+import { addMonthsToIsoDate } from "@/lib/finance/calculations";
 
 export type EventUpdate = Database["public"]["Tables"]["events"]["Update"];
 
@@ -17,6 +18,9 @@ export interface EventInput {
   status?: EventStatus;
   price?: number;
   notes?: string | null;
+  syncToFinance?: boolean;
+  financeInstallments?: 1 | 2;
+  financeStatus?: FinancialStatus;
 }
 
 export type EventWithClientInfo = Event & {
@@ -148,11 +152,94 @@ export async function createEventAction(input: EventInput) {
     // Não bloqueia a criação do evento no banco
   }
 
+  // Automação não-bloqueante: Lança receita vinculada no Módulo Financeiro se habilitado
+  if (input.syncToFinance && Number(syncedEventData.price) > 0) {
+    try {
+      await insertEventFinanceTransactions(supabase, user.id, syncedEventData, {
+        installments: input.financeInstallments,
+        financeStatus: input.financeStatus,
+      });
+    } catch (finErr) {
+      console.error("Aviso: Lançamento financeiro automático não concluído:", finErr);
+    }
+  }
+
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
+  revalidatePath("/financeiro");
   revalidatePath(`/clients/${input.clientId}`);
   return { data: syncedEventData };
+}
+
+function formatEventDateForFinance(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    if (!isNaN(d.getTime())) {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(d);
+    }
+  } catch {
+    // Fallback below
+  }
+  return isoDate.slice(0, 10);
+}
+
+async function insertEventFinanceTransactions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  eventData: EventWithClientInfo,
+  options: { installments?: 1 | 2; financeStatus?: FinancialStatus }
+) {
+  const baseDate = formatEventDateForFinance(eventData.date);
+  const totalPrice = Math.round(Number(eventData.price) * 100) / 100;
+  const defaultStatus: FinancialStatus =
+    options.financeStatus === "Recebido" || eventData.status === "finished"
+      ? "Recebido"
+      : "Pendente";
+
+  if (options.installments === 2) {
+    const firstHalf = Math.round((totalPrice / 2) * 100) / 100;
+    const secondHalf = Math.round((totalPrice - firstHalf) * 100) / 100;
+    await supabase.from("financial_transactions").insert([
+      {
+        user_id: userId,
+        event_id: eventData.id,
+        date: baseDate,
+        description: `${eventData.title} 1/2`,
+        type: "entrada",
+        category: "Receita",
+        amount: firstHalf,
+        status: defaultStatus,
+      },
+      {
+        user_id: userId,
+        event_id: eventData.id,
+        date: addMonthsToIsoDate(baseDate, 1),
+        description: `${eventData.title} 2/2`,
+        type: "entrada",
+        category: "Receita",
+        amount: secondHalf,
+        status: "Pendente",
+      },
+    ]);
+    return;
+  }
+
+  await supabase.from("financial_transactions").insert({
+    user_id: userId,
+    event_id: eventData.id,
+    date: baseDate,
+    description: eventData.title,
+    type: "entrada",
+    category: "Receita",
+    amount: totalPrice,
+    status: defaultStatus,
+  });
 }
 
 export async function updateEventAction(id: string, input: Partial<EventInput>) {
@@ -220,9 +307,43 @@ export async function updateEventAction(id: string, input: Partial<EventInput>) 
     console.error("Aviso ao atualizar evento no Google Calendar:", syncErr);
   }
 
+  // Automação não-bloqueante: Sincroniza receita vinculada no Módulo Financeiro se habilitado
+  if (input.syncToFinance && Number(updatedEventInfo.price) > 0) {
+    try {
+      const { data: existingTx } = await supabase
+        .from("financial_transactions")
+        .select("id, status")
+        .eq("event_id", id)
+        .eq("user_id", user.id);
+
+      const baseDate = formatEventDateForFinance(updatedEventInfo.date);
+      const totalPrice = Math.round(Number(updatedEventInfo.price) * 100) / 100;
+
+      if (!existingTx || existingTx.length === 0) {
+        await insertEventFinanceTransactions(supabase, user.id, updatedEventInfo, {
+          installments: input.financeInstallments,
+          financeStatus: input.financeStatus,
+        });
+      } else if (existingTx.length === 1) {
+        await supabase
+          .from("financial_transactions")
+          .update({
+            description: updatedEventInfo.title,
+            amount: totalPrice,
+            date: baseDate,
+          })
+          .eq("id", existingTx[0].id)
+          .eq("user_id", user.id);
+      }
+    } catch (finErr) {
+      console.error("Aviso ao sincronizar lançamento financeiro do evento:", finErr);
+    }
+  }
+
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
+  revalidatePath("/financeiro");
   if (updatedEventInfo.client_id) {
     revalidatePath(`/clients/${updatedEventInfo.client_id}`);
   }
@@ -280,6 +401,7 @@ export async function updateEventStatusAction(id: string, status: EventStatus) {
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
+  revalidatePath("/financeiro");
   return { data: data as unknown as EventWithClientInfo };
 }
 
@@ -318,5 +440,6 @@ export async function deleteEventAction(id: string) {
   revalidatePath("/events");
   revalidatePath("/dashboard");
   revalidatePath("/tasks");
+  revalidatePath("/financeiro");
   return { success: true };
 }
