@@ -6,6 +6,9 @@ import { Database } from "@/types/database";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Cooldown mínimo de 25 min no servidor para evitar rajadas caso o cron dispare antes da hora
+const MIN_COOLDOWN_MS = 25 * 60 * 1000;
+
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
@@ -44,7 +47,7 @@ export async function GET(request: Request) {
 
   const { data: subscriptions, error } = await supabase
     .from("push_subscriptions")
-    .select("id, endpoint, p256dh, auth");
+    .select("id, endpoint, p256dh, auth, last_notified_at");
 
   if (error) {
     console.error("Erro ao buscar push_subscriptions:", error);
@@ -55,8 +58,31 @@ export async function GET(request: Request) {
   }
 
   if (!subscriptions || subscriptions.length === 0) {
-    return NextResponse.json({ ok: true, sent: 0, removed: 0 });
+    return NextResponse.json({ ok: true, sent: 0, skipped: 0, removed: 0 });
   }
+
+  const now = Date.now();
+  const eligible = subscriptions.filter((sub) => {
+    if (!sub.last_notified_at) return true;
+    const lastMs = new Date(sub.last_notified_at).getTime();
+    if (!Number.isFinite(lastMs)) return true;
+    return now - lastMs >= MIN_COOLDOWN_MS;
+  });
+
+  const skipped = subscriptions.length - eligible.length;
+
+  if (eligible.length === 0) {
+    return NextResponse.json({ ok: true, sent: 0, skipped, removed: 0 });
+  }
+
+  const nowIso = new Date(now).toISOString();
+  await supabase
+    .from("push_subscriptions")
+    .update({ last_notified_at: nowIso, updated_at: nowIso })
+    .in(
+      "id",
+      eligible.map((sub) => sub.id)
+    );
 
   const payload = JSON.stringify({
     title: "Beba agua Ary!",
@@ -69,7 +95,7 @@ export async function GET(request: Request) {
   const expiredIds: string[] = [];
 
   await Promise.all(
-    subscriptions.map(async (sub) => {
+    eligible.map(async (sub) => {
       try {
         await sendNotification(
           {
@@ -104,6 +130,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     sent,
+    skipped,
     removed: expiredIds.length,
   });
 }
