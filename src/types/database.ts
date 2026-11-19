@@ -23,6 +23,30 @@ export type FinancialCategory = "Receita" | "Custo Fixo" | "Custo Variável";
 
 export type FinancialStatus = "Recebido" | "Pago" | "Pendente";
 
+export type SocialNetworkDb =
+  | "Instagram"
+  | "TikTok"
+  | "LinkedIn"
+  | "YouTube"
+  | "Facebook"
+  | "Outro";
+
+export type PostFormatDb =
+  | "Reels"
+  | "Carrossel"
+  | "Estático"
+  | "Stories"
+  | "Shorts"
+  | "Outro";
+
+export type PostStatusDb =
+  | "Aprovado"
+  | "Publicado"
+  | "Pendente"
+  | "Em Revisão"
+  | "Ajustar"
+  | "Reprovado";
+
 export interface Database {
   public: {
     Tables: {
@@ -326,6 +350,59 @@ export interface Database {
         };
         Relationships: [];
       };
+      social_posts: {
+        Row: {
+          id: string;
+          user_id: string;
+          client_id: string | null;
+          scheduled_date: string;
+          scheduled_time: string;
+          social_network: SocialNetworkDb;
+          format: PostFormatDb;
+          theme: string;
+          caption: string;
+          status: PostStatusDb;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          client_id?: string | null;
+          scheduled_date: string;
+          scheduled_time?: string;
+          social_network: SocialNetworkDb;
+          format: PostFormatDb;
+          theme: string;
+          caption?: string;
+          status?: PostStatusDb;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          client_id?: string | null;
+          scheduled_date?: string;
+          scheduled_time?: string;
+          social_network?: SocialNetworkDb;
+          format?: PostFormatDb;
+          theme?: string;
+          caption?: string;
+          status?: PostStatusDb;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_client_id_fkey";
+            columns: ["client_id"];
+            isOneToOne: false;
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -351,6 +428,7 @@ export type Event = Database["public"]["Tables"]["events"]["Row"];
 export type Task = Database["public"]["Tables"]["tasks"]["Row"];
 export type FinancialTransaction = Database["public"]["Tables"]["financial_transactions"]["Row"];
 export type ProfitPillarRule = Database["public"]["Tables"]["profit_pillar_rules"]["Row"];
+export type SocialPost = Database["public"]["Tables"]["social_posts"]["Row"];
 
 export type ClientWithEvents = Client & {
   events?: Event[];

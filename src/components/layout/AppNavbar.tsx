@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity, Wallet } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, BookOpen, Heart, Loader2, Activity, Wallet, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { GOOGLE_OAUTH_SCOPES_STRING } from "@/lib/google/scopes";
 import { SignOutButton } from "./SignOutButton";
@@ -132,6 +132,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
   const navItems = [
     { href: "/dashboard", label: "Início", icon: LayoutDashboard },
     { href: "/events", label: "Trabalhos", icon: Calendar },
+    { href: "/cronograma", label: "Cronograma", icon: CalendarDays },
     { href: "/clients", label: "Clientes", icon: Users },
     { href: "/financeiro", label: "Financeiro", icon: Wallet },
   ];
@@ -260,7 +261,7 @@ export function AppNavbar({ profile }: AppNavbarProps) {
       </header>
 
       {/* Mobile Bottom Navigation Bar with direct Guide access */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#33293c] bg-[#120e15]/95 backdrop-blur-md px-2 pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#33293c] bg-[#120e15]/95 backdrop-blur-md px-1 pb-safe">
         <div className="flex items-center justify-around h-14">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -269,24 +270,24 @@ export function AppNavbar({ profile }: AppNavbarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 px-0.5 py-1 text-[9px] leading-tight transition-colors ${
                   isActive
                     ? "text-[#bba0c1] font-semibold"
                     : "text-[#968a9c] hover:text-[#f4eff5]"
                 }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? "text-[#9873a1]" : "text-[#968a9c]"}`} />
-                <span>{item.label}</span>
+                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-[#9873a1]" : "text-[#968a9c]"}`} />
+                <span className="truncate max-w-full">{item.label}</span>
               </Link>
             );
           })}
           <button
             onClick={() => setIsGuideOpen(true)}
             type="button"
-            className="flex flex-col items-center justify-center gap-1 flex-1 py-1 text-[10px] text-[#9873a1] hover:text-[#bba0c1] transition-colors"
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 px-0.5 py-1 text-[9px] leading-tight text-[#9873a1] hover:text-[#bba0c1] transition-colors"
           >
-            <BookOpen className="h-4 w-4 text-[#9873a1]" />
-            <span>Instruções</span>
+            <BookOpen className="h-4 w-4 shrink-0 text-[#9873a1]" />
+            <span className="truncate max-w-full">Instruções</span>
           </button>
         </div>
       </nav>
